@@ -7,12 +7,13 @@ import { z } from 'zod';
 import { sendMessage, type ChatMessage } from '@/ai/flows/chat-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, User, Sparkles } from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, ThumbsDown, RefreshCw } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Balancer } from 'react-wrap-balancer';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const formSchema = z.object({
   message: z.string().min(1, { message: 'Message cannot be empty.' }),
@@ -55,6 +56,10 @@ export default function ChatPage() {
       setIsLoading(false);
     }
   };
+  
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -66,23 +71,20 @@ export default function ChatPage() {
   }, [messages, isLoading]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh_-_4rem)]">
-      <header className="container mx-auto max-w-3xl px-4 pt-8 pb-4 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-accent">
-          <Balancer>Chat with AI</Balancer>
-        </h1>
-        <p className="text-lg text-muted-foreground mt-2">
-          <Balancer>Your creative partner for content generation 🇮🇳</Balancer>
-        </p>
-      </header>
-
-      <ScrollArea className="flex-grow" ref={scrollAreaRef}>
-        <div className="container mx-auto max-w-3xl space-y-6 p-4">
+    <div className="flex flex-col h-screen bg-background">
+      <ScrollArea className="flex-1" ref={scrollAreaRef}>
+        <div className="mx-auto max-w-3xl w-full space-y-8 p-4">
           {messages.length === 0 && !isLoading && (
-            <div className="flex h-full min-h-[40vh] items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
-              <p className="text-muted-foreground">
-                Start a conversation by typing a message below.
-              </p>
+            <div className="flex h-[calc(100vh_-_10rem)] items-center justify-center">
+              <div className='text-center'>
+                <div className='inline-block p-4 bg-primary/10 rounded-full'>
+                  <Sparkles className="h-10 w-10 text-primary" />
+                </div>
+                <h1 className="text-4xl font-bold mt-4">Gemini</h1>
+                <p className="text-muted-foreground mt-2">
+                  Start a conversation with your AI assistant.
+                </p>
+              </div>
             </div>
           )}
           {messages.map((message, index) => (
@@ -90,39 +92,58 @@ export default function ChatPage() {
               key={index}
               className={cn(
                 'flex items-start gap-4',
-                message.role === 'user' ? 'justify-end' : 'justify-start'
               )}
             >
-              {message.role === 'model' && (
+              {message.role === 'model' ? (
                 <Avatar className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center">
                   <Sparkles className="h-5 w-5" />
                 </Avatar>
-              )}
-              <div
-                className={cn(
-                  'max-w-[75%] rounded-lg p-3 text-sm shadow-md',
-                  message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-card'
-                )}
-              >
-                <p className="whitespace-pre-wrap">{message.content}</p>
-              </div>
-              {message.role === 'user' && (
+              ) : (
                 <Avatar className="h-8 w-8">
                   <AvatarFallback>
                     <User />
                   </AvatarFallback>
                 </Avatar>
               )}
+             
+              <div className="flex-1">
+                 <div
+                    className={cn(
+                      'max-w-full rounded-lg p-3 text-sm prose dark:prose-invert',
+                      message.role === 'user'
+                        ? 'bg-muted'
+                        : 'bg-card'
+                    )}
+                  >
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                    </ReactMarkdown>
+                </div>
+                {message.role === 'model' && (
+                  <div className="flex items-center gap-1 mt-2 text-muted-foreground">
+                    <Button variant="ghost" size="icon" className='h-7 w-7' onClick={() => handleCopy(message.content)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className='h-7 w-7'>
+                      <ThumbsUp className="h-4 w-4" />
+                    </Button>
+                     <Button variant="ghost" size="icon" className='h-7 w-7'>
+                      <ThumbsDown className="h-4 w-4" />
+                    </Button>
+                     <Button variant="ghost" size="icon" className='h-7 w-7'>
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
           {isLoading && (
-            <div className="flex items-start gap-4 justify-start">
+            <div className="flex items-start gap-4">
               <Avatar className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center">
                 <Sparkles className="h-5 w-5" />
               </Avatar>
-              <div className="bg-card rounded-lg p-3 flex items-center shadow-md">
+              <div className="bg-card rounded-lg p-3 flex items-center shadow-sm">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             </div>
@@ -144,21 +165,20 @@ export default function ChatPage() {
                   <FormItem className="flex-1">
                     <FormControl>
                       <Input
-                        className="rounded-full"
-                        placeholder="Message your AI assistant..."
+                        className="rounded-full h-12 text-base"
+                        placeholder="Message Gemini..."
                         {...field}
                         autoComplete="off"
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
               <Button
                 type="submit"
                 size="icon"
-                className="rounded-full shrink-0"
-                disabled={isLoading}
+                className="rounded-full shrink-0 h-10 w-10"
+                disabled={isLoading || !form.formState.isValid}
               >
                 <Send className="h-4 w-4" />
                 <span className="sr-only">Send</span>
