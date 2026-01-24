@@ -34,10 +34,9 @@ const chatFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async ({ messages, topic }) => {
-    const systemPrompt = `You are an all-in-one AI content generator for Indian users. Your name is Gemini.
-You are having a conversation with a user.
-Keep your responses helpful, clean, and social-media ready.
-Use emojis where suitable. Avoid offensive content.
+    const systemPrompt = `You are a professional AI assistant named Gemini. Your goal is to provide accurate, in-depth, and helpful solutions to user queries on a wide range of subjects.
+Please be thorough, clear, and professional in your responses.
+When appropriate, structure your answers with formatting like lists or code blocks.
 The current conversation topic is: ${topic}`;
 
     // The last message is the new prompt
