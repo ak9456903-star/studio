@@ -21,7 +21,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <div className="relative min-h-screen pb-20">
+        <div className="relative min-h-screen pb-16">
           {children}
         </div>
         <BottomNav />
