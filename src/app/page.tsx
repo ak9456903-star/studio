@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useRouter } from 'next/navigation';
 import { Balancer } from 'react-wrap-balancer';
 import {
   generateContent,
@@ -25,6 +26,7 @@ import {
   Hash,
   Instagram,
   Loader2,
+  MessageCircle,
   MessageSquareText,
   Quote,
   Sparkles,
@@ -48,7 +50,14 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const toolsByCategory = [
+type Task = {
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  href?: string;
+};
+
+const toolsByCategory: { category: string; icon: React.ReactNode; tasks: Task[] }[] = [
   {
     category: 'Instagram',
     icon: <Instagram className="h-6 w-6" />,
@@ -77,6 +86,18 @@ const toolsByCategory = [
     ],
   },
   {
+    category: 'AI Assistant',
+    icon: <MessageCircle className="h-6 w-6" />,
+    tasks: [
+        {
+            name: 'Chat with Gemini',
+            description: 'Have a conversation with our AI assistant.',
+            icon: <Sparkles className="h-8 w-8 text-primary" />,
+            href: '/chat'
+        }
+    ]
+  },
+  {
     category: 'General',
     icon: <Sparkles className="h-6 w-6" />,
     tasks: [
@@ -98,6 +119,7 @@ export default function CreatePage() {
   const [selectedTaskType, setSelectedTaskType] = useState<string | null>(null);
   const [generatedContent, setGeneratedContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -125,8 +147,12 @@ export default function CreatePage() {
     }
   };
 
-  const handleTaskSelect = (taskName: string) => {
-    setSelectedTaskType(taskName);
+  const handleTaskSelect = (task: Task) => {
+    if (task.href) {
+      router.push(task.href);
+      return;
+    }
+    setSelectedTaskType(task.name);
     setGeneratedContent('');
     form.reset();
   };
@@ -237,7 +263,7 @@ export default function CreatePage() {
                 <Card
                   key={task.name}
                   className="w-full max-w-2xl mx-auto rounded-xl shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => handleTaskSelect(task.name)}
+                  onClick={() => handleTaskSelect(task)}
                 >
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
