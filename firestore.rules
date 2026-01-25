@@ -8,7 +8,7 @@
  *
  * Data Structure:
  * All user-specific data is nested hierarchically under the `/users/{userId}` path.
- * This structure includes subcollections for `chats`, `messages`, and `images`,
+ * This structure includes subcollections for `images`,
  * ensuring that data access can be controlled simply by verifying ownership at the top
  * of the path. This design inherently secures queries and prevents data leakage.
  *
@@ -23,14 +23,14 @@
  *
  * Denormalization for Authorization:
  * This ruleset relies on the path structure itself (`/users/{userId}/...`) as the primary
- * mechanism for authorization. Additionally, documents in subcollections (like `chats`
- * and `images`) are expected to contain a denormalized `userId` field. This allows for
+ * mechanism for authorization. Additionally, documents in subcollections (like `images`) are 
+ * expected to contain a denormalized `userId` field. This allows for
  * simple, fast, and secure validation rules without requiring expensive `get()` calls to
  * parent documents.
  *
  * Structural Segregation:
  * The data model effectively segregates different types of user data into distinct
- * subcollections (`/chats`, `/images`). This creates clear boundaries and allows for
+ * subcollections (`/images`). This creates clear boundaries and allows for
  * granular, path-based security rules that are easy to understand and maintain.
  */
 rules_version = '2';
@@ -74,14 +74,6 @@ service cloud.firestore {
       allow create: if request.auth.uid == userId && request.resource.data.id == userId;
       allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
       allow list: if false; // Prevent user enumeration
-    }
-
-    match /users/{userId}/chats/{chatId} {
-      allow read, write, delete: if isOwner(userId);
-    }
-    
-    match /users/{userId}/chats/{chatId}/messages/{messageId} {
-      allow read, write, delete: if isOwner(userId);
     }
     
     match /users/{userId}/images/{imageId} {

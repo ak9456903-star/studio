@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, MessageCircle, History, User } from 'lucide-react';
+import { Home, MessageCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
@@ -9,8 +9,6 @@ import { useUser } from '@/firebase';
 const navItems = [
   { href: '/', icon: Home, label: 'Home' },
   { href: '/chat', icon: MessageCircle, label: 'Chat' },
-  { href: '/history', icon: History, label: 'History' },
-  { href: '/profile', icon: User, label: 'Profile' },
 ];
 
 export function BottomNav() {
@@ -26,7 +24,7 @@ export function BottomNav() {
         {navItems.map((item) => {
             const isActive = item.href === pathname;
             
-            const className = "flex flex-col items-center justify-center gap-1 text-muted-foreground w-1/4 h-full rounded-lg";
+            const className = "flex flex-col items-center justify-center gap-1 text-muted-foreground w-1/2 h-full rounded-lg";
             
             const children = (
                 <>
@@ -36,14 +34,6 @@ export function BottomNav() {
                     </span>
                 </>
             );
-
-            if (item.href.startsWith('#')) {
-                return (
-                    <a key={item.label} href={item.href} className={className}>
-                        {children}
-                    </a>
-                );
-            }
 
             return (
                 <Link key={item.label} href={item.href} className={className}>
