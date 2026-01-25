@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, ElementRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { sendMessage, type ChatMessage } from '@/ai/flows/chat-flow';
+import { sendMessage, type ChatMessage, type AnalysisOutput } from '@/ai/flows/chat-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, ThumbsDown, RefreshCw, Paperclip, X } from 'lucide-react';
@@ -14,9 +14,10 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import NextImage from 'next/image';
+import { collection, serverTimestamp } from 'firebase/firestore';
 
 
 const formSchema = z.object({
@@ -24,6 +25,47 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+function formatAnalysisToMarkdown(analysis: AnalysisOutput): string {
+    const problems = analysis.problems.length > 0
+        ? analysis.problems.map(p => `- ${p}`).join('\n')
+        : 'No major problems found. Great job!';
+
+    const improvements = analysis.improvements.length > 0
+        ? analysis.improvements.map(i => `- ${i}`).join('\n')
+        : 'Keep up the good work!';
+
+    return `
+### Viral Analysis
+**Viral Score:** ${analysis.viral_score}/100
+**Status:** ${analysis.status}
+
+---
+
+#### 🚨 Problems / Weaknesses
+${problems}
+
+---
+
+#### 💡 Improvement Suggestions
+${improvements}
+
+---
+
+#### ✨ Optimized Version
+**Title:** ${analysis.optimized_content.title}
+**Caption:** ${analysis.optimized_content.caption}
+**Hashtags:** ${analysis.optimized_content.hashtags.join(' ')}
+**CTA:** ${analysis.optimized_content.cta}
+
+**Script:**
+> ${analysis.optimized_content.script.replace(/\n/g, '\n> ')}
+
+---
+*Keep going, you are improving 🚀*
+    `.trim();
+}
+
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -33,6 +75,7 @@ export default function ChatPage() {
   const scrollAreaRef = useRef<ElementRef<typeof ScrollArea>>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
 
 
@@ -62,6 +105,8 @@ export default function ChatPage() {
   };
 
   const onSubmit = async (data: FormValues) => {
+    if (!user || !firestore) return;
+
     let userMessage: ChatMessage = { role: 'user', content: data.message };
     
     if (mediaPreview && mediaType) {
@@ -83,16 +128,30 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      const aiResponse = await sendMessage({
+      const analysisResult = await sendMessage({
         messages: newMessages,
         topic: 'Content Viral Potential Analysis',
       });
-      setMessages((prev) => [...prev, { role: 'model', content: aiResponse }]);
+
+      const historyRecord = {
+          userId: user.uid,
+          mode: 'analyze',
+          content: userMessage.content,
+          result: analysisResult,
+          createdAt: serverTimestamp(),
+      };
+      const historyColRef = collection(firestore, 'users', user.uid, 'history');
+      addDocumentNonBlocking(historyColRef, historyRecord);
+
+      const aiResponseMarkdown = formatAnalysisToMarkdown(analysisResult);
+      
+      setMessages((prev) => [...prev, { role: 'model', content: aiResponseMarkdown }]);
     } catch (error) {
       console.error('Error sending message:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Sorry, something went wrong. Please try again.';
       setMessages((prev) => [
         ...prev,
-        { role: 'model', content: 'Sorry, something went wrong. Please try again.' },
+        { role: 'model', content: errorMessage },
       ]);
     } finally {
       setIsLoading(false);

@@ -5,6 +5,7 @@
  * - sendMessage - A function that handles sending a message to the AI.
  * - ChatMessage - The type for a chat message (user or model).
  * - ChatInput - The input type for the sendMessage function.
+ * - AnalysisOutput - The structured output from the AI analysis.
  */
 
 import { ai } from '@/ai/genkit';
@@ -29,7 +30,7 @@ const ChatInputSchema = z.object({
 type ChatInput = z.infer<typeof ChatInputSchema>;
 
 
-const AnalysisOutputSchema = z.object({
+export const AnalysisOutputSchema = z.object({
     viral_score: z.string().describe('The viral score from 0 to 100.'),
     status: z.string().describe('The viral potential status (e.g., Low ❌, Medium ⚠️, High 🚀, Very High 🔥).'),
     problems: z.array(z.string()).describe('A list of problems or weaknesses in the content.'),
@@ -42,61 +43,25 @@ const AnalysisOutputSchema = z.object({
         cta: z.string().describe('A clear call-to-action.'),
     }),
 });
-type AnalysisOutput = z.infer<typeof AnalysisOutputSchema>;
-
-function formatAnalysisToMarkdown(analysis: AnalysisOutput): string {
-    const problems = analysis.problems.length > 0
-        ? analysis.problems.map(p => `- ${p}`).join('\n')
-        : 'No major problems found. Great job!';
-
-    const improvements = analysis.improvements.length > 0
-        ? analysis.improvements.map(i => `- ${i}`).join('\n')
-        : 'Keep up the good work!';
-
-    return `
-### Viral Analysis
-**Viral Score:** ${analysis.viral_score}/100
-**Status:** ${analysis.status}
-
----
-
-#### 🚨 Problems / Weaknesses
-${problems}
-
----
-
-#### 💡 Improvement Suggestions
-${improvements}
-
----
-
-#### ✨ Optimized Version
-**Title:** ${analysis.optimized_content.title}
-**Caption:** ${analysis.optimized_content.caption}
-**Hashtags:** ${analysis.optimized_content.hashtags.join(' ')}
-**CTA:** ${analysis.optimized_content.cta}
-
-**Script:**
-> ${analysis.optimized_content.script.replace(/\n/g, '\n> ')}
-
----
-*Keep going, you are improving 🚀*
-    `.trim();
-}
+export type AnalysisOutput = z.infer<typeof AnalysisOutputSchema>;
 
 
-export async function sendMessage(input: ChatInput): Promise<string> {
-  return chatFlow(input);
+export async function sendMessage(input: ChatInput): Promise<AnalysisOutput> {
+  const result = await chatFlow(input);
+  if (!result) {
+    throw new Error("AI analysis failed to produce a result.");
+  }
+  return result;
 }
 
 const chatFlow = ai.defineFlow(
   {
     name: 'chatFlow',
     inputSchema: ChatInputSchema,
-    outputSchema: z.string(),
+    outputSchema: AnalysisOutputSchema,
   },
   async ({ messages, topic }) => {
-    const systemPrompt = `You are an Advanced AI Content Analyzer & Growth Assistant for YouTube Shorts, Instagram Reels, and Facebook Reels. You are smarter than a normal AI, combining the skills of a ChatGPT Pro, a YouTube Expert, and a Marketing Expert. Your goal is to help users grow fast and go viral.
+    const systemPrompt = `You are an Advanced AI Content Analyzer & Growth Assistant for YouTube Shorts, Instagram Reels, and Facebook Reels.
 
 **CORE INSTRUCTIONS:**
 
@@ -154,12 +119,9 @@ const chatFlow = ai.defineFlow(
     const analysis = llmResponse.output;
     if (!analysis) {
         // Fallback for when structured output fails
-        const fallbackText = llmResponse.text;
-        if (fallbackText) return fallbackText;
-        return "Sorry, I couldn't analyze the content right now. Please try again.";
+        throw new Error("Sorry, I couldn't analyze the content right now. Please try again.");
     }
     
-    // Format the JSON analysis into a user-friendly Markdown string
-    return formatAnalysisToMarkdown(analysis);
+    return analysis;
   }
 );
