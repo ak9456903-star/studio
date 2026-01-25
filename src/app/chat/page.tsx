@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { sendMessage, type ChatMessage } from '@/ai/flows/chat-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, ThumbsDown, RefreshCw, Paperclip } from 'lucide-react';
+import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, ThumbsDown, RefreshCw, Paperclip, X } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -16,9 +16,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import NextImage from 'next/image';
+
 
 const formSchema = z.object({
-  message: z.string().min(1, { message: 'Message cannot be empty.' }),
+  message: z.string(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -26,8 +28,10 @@ type FormValues = z.infer<typeof formSchema>;
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<string | null>(null);
   const scrollAreaRef = useRef<ElementRef<typeof ScrollArea>>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -45,17 +49,43 @@ export default function ChatPage() {
     },
   });
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setMediaPreview(e.target?.result as string);
+            setMediaType(file.type);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = async (data: FormValues) => {
-    const userMessage: ChatMessage = { role: 'user', content: data.message };
+    let userMessage: ChatMessage = { role: 'user', content: data.message };
+    
+    if (mediaPreview && mediaType) {
+        userMessage.media = { url: mediaPreview, type: mediaType };
+    }
+
+    if (!userMessage.content && !userMessage.media) {
+        return; // Don't send empty message
+    }
+
     const newMessages: ChatMessage[] = [...messages, userMessage];
     setMessages(newMessages);
     form.reset();
+    setMediaPreview(null);
+    setMediaType(null);
+    if (mediaInputRef.current) {
+      mediaInputRef.current.value = '';
+    }
     setIsLoading(true);
 
     try {
       const aiResponse = await sendMessage({
         messages: newMessages,
-        topic: 'General Conversation',
+        topic: 'Content Viral Potential Analysis',
       });
       setMessages((prev) => [...prev, { role: 'model', content: aiResponse }]);
     } catch (error) {
@@ -101,8 +131,8 @@ export default function ChatPage() {
                   <Sparkles className="h-10 w-10 text-primary" />
                 </div>
                 <h1 className="text-4xl font-bold mt-4">Content Strategy</h1>
-                <p className="text-muted-foreground mt-2">
-                  Your AI assistant for content strategy.
+                <p className="text-muted-foreground mt-2 max-w-md">
+                  Upload your Instagram Reels or YouTube Shorts to get feedback on its viral potential!
                 </p>
               </div>
             </div>
@@ -127,12 +157,21 @@ export default function ChatPage() {
               )}
              
               <div className="flex-1">
+                {message.media && (
+                    <div className="mb-2">
+                        {message.media.type.startsWith('image/') ? (
+                            <NextImage src={message.media.url} alt="Uploaded content" width={300} height={300} className="rounded-lg object-cover" />
+                        ) : (
+                            <video src={message.media.url} controls className="max-w-xs rounded-lg" />
+                        )}
+                    </div>
+                )}
                  <div
                     className={cn(
                       'max-w-full rounded-lg p-3 text-sm prose dark:prose-invert',
-                      message.role === 'user'
-                        ? 'bg-muted'
-                        : 'bg-card'
+                      {'bg-muted': message.role === 'user'},
+                      {'bg-card': message.role === 'model'},
+                      {'mt-2': message.media}
                     )}
                   >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -175,6 +214,24 @@ export default function ChatPage() {
         <div className="container mx-auto max-w-3xl py-3 px-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
+              {mediaPreview && (
+                <div className="relative mb-2 w-fit">
+                  {mediaType?.startsWith('image/') ? (
+                    <NextImage src={mediaPreview} alt="Preview" width={100} height={100} className="rounded-md object-cover" />
+                  ) : (
+                    <video src={mediaPreview} width="200" controls className="rounded-md" />
+                  )}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                    onClick={() => { setMediaPreview(null); setMediaType(null); if(mediaInputRef.current) mediaInputRef.current.value = ''; }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <FormField
                 control={form.control}
                 name="message"
@@ -187,19 +244,21 @@ export default function ChatPage() {
                           variant="ghost"
                           size="icon"
                           className="absolute left-1 flex h-9 w-9 items-center justify-center rounded-full"
-                          onClick={() => imageInputRef.current?.click()}
+                          onClick={() => mediaInputRef.current?.click()}
+                          disabled={isLoading}
                         >
                           <Paperclip className="h-5 w-5 text-muted-foreground" />
-                          <span className="sr-only">Attach an image</span>
+                          <span className="sr-only">Attach media</span>
                         </Button>
                         <Input
                           type="file"
-                          accept="image/*"
-                          ref={imageInputRef}
+                          accept="image/*,video/*"
+                          ref={mediaInputRef}
                           className="hidden"
+                          onChange={handleFileChange}
                         />
                         <Input
-                          placeholder="Message Gemini..."
+                          placeholder="Add a comment or just send the media..."
                           autoComplete="off"
                           className="h-12 w-full rounded-full bg-muted pl-12 pr-14 text-base"
                           {...field}
@@ -208,7 +267,7 @@ export default function ChatPage() {
                           type="submit"
                           size="icon"
                           className="absolute right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
-                          disabled={isLoading || !form.formState.isValid}
+                          disabled={isLoading || (!form.getValues().message && !mediaPreview)}
                         >
                           <Send className="h-5 w-5" />
                           <span className="sr-only">Send message</span>
