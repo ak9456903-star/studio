@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { sendMessage, type ChatMessage } from '@/ai/flows/chat-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, ThumbsDown, RefreshCw } from 'lucide-react';
+import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, ThumbsDown, RefreshCw, Paperclip } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<ElementRef<typeof ScrollArea>>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -73,9 +74,9 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-screen bg-background">
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
-        <div className="mx-auto max-w-3xl w-full space-y-8 p-4">
+        <div className="mx-auto max-w-3xl w-full space-y-8 p-4 pb-24">
           {messages.length === 0 && !isLoading && (
-            <div className="flex h-[calc(100vh_-_10rem)] items-center justify-center">
+            <div className="flex h-[calc(100vh_-_15rem)] items-center justify-center">
               <div className='text-center'>
                 <div className='inline-block p-4 bg-primary/10 rounded-full'>
                   <Sparkles className="h-10 w-10 text-primary" />
@@ -151,38 +152,53 @@ export default function ChatPage() {
         </div>
       </ScrollArea>
 
-      <div className="bg-background border-t">
-        <div className="container mx-auto max-w-3xl p-4">
+      <div className="fixed bottom-16 left-0 right-0 bg-background/95 backdrop-blur-sm border-t">
+        <div className="container mx-auto max-w-3xl py-3 px-4">
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="flex items-center gap-2"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)}>
               <FormField
                 control={form.control}
                 name="message"
                 render={({ field }) => (
-                  <FormItem className="flex-1">
+                  <FormItem>
                     <FormControl>
-                      <Input
-                        className="rounded-full h-12 text-base"
-                        placeholder="Message Gemini..."
-                        {...field}
-                        autoComplete="off"
-                      />
+                      <div className="relative flex w-full items-center">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute left-1 flex h-9 w-9 items-center justify-center rounded-full"
+                          onClick={() => imageInputRef.current?.click()}
+                        >
+                          <Paperclip className="h-5 w-5 text-muted-foreground" />
+                          <span className="sr-only">Attach an image</span>
+                        </Button>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          ref={imageInputRef}
+                          className="hidden"
+                        />
+                        <Input
+                          placeholder="Message Gemini..."
+                          autoComplete="off"
+                          className="h-12 w-full rounded-full bg-muted pl-12 pr-14 text-base"
+                          {...field}
+                        />
+                        <Button
+                          type="submit"
+                          size="icon"
+                          className="absolute right-1.5 flex h-9 w-9 items-center justify-center rounded-full"
+                          disabled={isLoading || !form.formState.isValid}
+                        >
+                          <Send className="h-5 w-5" />
+                          <span className="sr-only">Send message</span>
+                        </Button>
+                      </div>
                     </FormControl>
                   </FormItem>
                 )}
               />
-              <Button
-                type="submit"
-                size="icon"
-                className="rounded-full shrink-0 h-10 w-10"
-                disabled={isLoading || !form.formState.isValid}
-              >
-                <Send className="h-4 w-4" />
-                <span className="sr-only">Send</span>
-              </Button>
             </form>
           </Form>
         </div>
