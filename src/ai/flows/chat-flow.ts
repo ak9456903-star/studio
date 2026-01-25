@@ -86,11 +86,10 @@ const chatFlow = ai.defineFlow(
 5.  **OUTPUT FORMAT:** Your entire output MUST be a single, valid JSON object that strictly follows the output schema. Do NOT return any other text, markdown, or commentary outside of the pure JSON structure.
 `;
 
-    const allMessages = [...messages];
-    // The last message is the new prompt
-    const lastMessage = allMessages.pop();
+    // The last message in the array is the user's new prompt.
+    const lastMessage = messages[messages.length - 1];
     if (!lastMessage || lastMessage.role !== 'user') {
-        throw new Error("Last message must be from the user.");
+        throw new Error("The last message must be from the user to analyze.");
     }
     
     const promptParts: any[] = [{ text: lastMessage.content }];
@@ -98,19 +97,11 @@ const chatFlow = ai.defineFlow(
       promptParts.push({ media: { url: lastMessage.media.url } });
     }
 
-    const history = allMessages.map(m => {
-        const parts: any[] = [{text: m.content}];
-        if (m.media) {
-            parts.push({ media: { url: m.media.url } });
-        }
-        return {role: m.role, parts };
-    });
-
     const llmResponse = await ai.generate({
       system: systemPrompt,
       prompt: promptParts,
-      history,
-      output: { schema: AnalysisOutputSchema }, // Ask for structured JSON
+      // History is removed to treat each message as a self-contained analysis.
+      output: { schema: AnalysisOutputSchema },
       config: {
         temperature: 0.7,
       },
