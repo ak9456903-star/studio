@@ -6,10 +6,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { Balancer } from 'react-wrap-balancer';
+import NextImage from 'next/image';
 import {
   generateContent,
   type GenerateContentInput,
 } from '@/ai/flows/content-generator';
+import { generateThumbnail } from '@/ai/flows/thumbnail-generator';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -23,6 +25,7 @@ import {
   ArrowLeft,
   ChevronRight,
   Clapperboard,
+  Download,
   Hash,
   Instagram,
   Loader2,
@@ -85,6 +88,11 @@ const toolsByCategory: { category: string; icon: React.ReactNode; tasks: Task[] 
         description: 'Get click-worthy titles for your videos.',
         icon: <Clapperboard className="h-8 w-8 text-primary" />,
       },
+      {
+        name: 'YouTube Thumbnail',
+        description: 'Generate a thumbnail from a video title.',
+        icon: <ImageIcon className="h-8 w-8 text-primary" />,
+      },
     ],
   },
   {
@@ -132,6 +140,7 @@ const toolsByCategory: { category: string; icon: React.ReactNode; tasks: Task[] 
 export default function CreatePage() {
   const [selectedTaskType, setSelectedTaskType] = useState<string | null>(null);
   const [generatedContent, setGeneratedContent] = useState('');
+  const [generatedImageUrl, setGeneratedImageUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { user, isUserLoading } = useUser();
@@ -154,12 +163,19 @@ export default function CreatePage() {
 
     setIsLoading(true);
     setGeneratedContent('');
+    setGeneratedImageUrl('');
+
     try {
-      const result = await generateContent({
-        taskType: selectedTaskType,
-        topic: data.topic,
-      });
-      setGeneratedContent(result);
+      if (selectedTaskType === 'YouTube Thumbnail') {
+        const result = await generateThumbnail({ title: data.topic });
+        setGeneratedImageUrl(result.imageUrl);
+      } else {
+        const result = await generateContent({
+          taskType: selectedTaskType,
+          topic: data.topic,
+        });
+        setGeneratedContent(result);
+      }
     } catch (error) {
       console.error('Error generating content:', error);
       setGeneratedContent('Failed to generate content. Please try again.');
@@ -175,7 +191,18 @@ export default function CreatePage() {
     }
     setSelectedTaskType(task.name);
     setGeneratedContent('');
+    setGeneratedImageUrl('');
     form.reset();
+  };
+
+  const handleDownload = (imageUrl: string, prompt: string) => {
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    const filename = prompt.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 50) || 'generated-image';
+    link.download = `${filename}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (isUserLoading || !user) {
@@ -188,6 +215,9 @@ export default function CreatePage() {
 
 
   if (selectedTaskType) {
+    const isImageTask = selectedTaskType === 'YouTube Thumbnail';
+    const currentTopic = form.watch('topic');
+
     return (
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Button
@@ -202,7 +232,9 @@ export default function CreatePage() {
           <CardHeader>
             <CardTitle className="text-2xl">{selectedTaskType}</CardTitle>
             <CardDescription>
-              Enter a topic to generate content.
+              {isImageTask
+                ? 'Enter a video title to generate a thumbnail.'
+                : 'Enter a topic to generate content.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -213,11 +245,15 @@ export default function CreatePage() {
                   name="topic"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Topic</FormLabel>
+                      <FormLabel>{isImageTask ? 'Video Title' : 'Topic'}</FormLabel>
                       <FormControl>
                         <Input
                           className="rounded-lg"
-                          placeholder="e.g., Diwali celebration, new recipe..."
+                          placeholder={
+                            isImageTask
+                              ? 'e.g., My Awesome Trip to Manali'
+                              : 'e.g., Diwali celebration, new recipe...'
+                          }
                           {...field}
                         />
                       </FormControl>
@@ -233,7 +269,7 @@ export default function CreatePage() {
                   {isLoading && (
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   )}
-                  Generate Content
+                  {isImageTask ? 'Generate Thumbnail' : 'Generate Content'}
                 </Button>
               </form>
             </Form>
@@ -252,6 +288,16 @@ export default function CreatePage() {
               <div className="flex flex-col items-center justify-center h-48 gap-4">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
                 <p className="text-muted-foreground">Generating...</p>
+              </div>
+            ) : generatedImageUrl ? (
+              <div className="relative group aspect-video">
+                <NextImage src={generatedImageUrl} alt={currentTopic} fill className="object-contain rounded-lg" />
+                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                    <Button variant="outline" onClick={() => handleDownload(generatedImageUrl, currentTopic)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                    </Button>
+                </div>
               </div>
             ) : generatedContent ? (
               <div className="whitespace-pre-wrap rounded-lg bg-muted p-4 text-sm font-mono">
