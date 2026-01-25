@@ -32,6 +32,7 @@ import {
   Sparkles,
   UserSquare2,
   Youtube,
+  Image as ImageIcon,
 } from 'lucide-react';
 import {
   Form,
@@ -97,6 +98,18 @@ const toolsByCategory: { category: string; icon: React.ReactNode; tasks: Task[] 
             href: '/chat'
         }
     ]
+  },
+  {
+    category: 'Creative Tools',
+    icon: <Sparkles className="h-6 w-6" />,
+    tasks: [
+      {
+        name: 'AI Photo Creator',
+        description: 'Turn your text prompts into images.',
+        icon: <ImageIcon className="h-8 w-8 text-primary" />,
+        href: '/image-creator',
+      },
+    ],
   },
   {
     category: 'General',
