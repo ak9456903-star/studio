@@ -57,8 +57,9 @@ const chatFlow = ai.defineFlow(
 
 4.  **Formatting:** Use markdown (bolding, lists) to make your analysis clear and easy to read.`;
 
+    const allMessages = [...messages];
     // The last message is the new prompt
-    const lastMessage = messages.pop();
+    const lastMessage = allMessages.pop();
     if (!lastMessage || lastMessage.role !== 'user') {
         throw new Error("Last message must be from the user.");
     }
@@ -68,7 +69,7 @@ const chatFlow = ai.defineFlow(
       promptParts.push({ media: { url: lastMessage.media.url } });
     }
 
-    const history = messages.map(m => {
+    const history = allMessages.map(m => {
         const parts: any[] = [{text: m.content}];
         if (m.media) {
             parts.push({ media: { url: m.media.url } });
