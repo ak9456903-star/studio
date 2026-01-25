@@ -29,6 +29,62 @@ const ChatInputSchema = z.object({
 type ChatInput = z.infer<typeof ChatInputSchema>;
 
 
+const AnalysisOutputSchema = z.object({
+    viral_score: z.string().describe('The viral score from 0 to 100.'),
+    status: z.string().describe('The viral potential status (e.g., Low ❌, Medium ⚠️, High 🚀).'),
+    problems: z.array(z.string()).describe('A list of problems or weaknesses in the content.'),
+    improvements: z.array(z.string()).describe('A list of suggestions for improvement.'),
+    optimized_content: z.object({
+        title: z.string().describe('An optimized, viral title.'),
+        caption: z.string().describe('An optimized, engaging caption.'),
+        hashtags: z.array(z.string()).describe('A list of relevant hashtags.'),
+        script: z.string().describe('A rewritten, short script (15-60 seconds).'),
+        cta: z.string().describe('A clear call-to-action.'),
+    }),
+});
+type AnalysisOutput = z.infer<typeof AnalysisOutputSchema>;
+
+function formatAnalysisToMarkdown(analysis: AnalysisOutput): string {
+    const problems = analysis.problems.length > 0
+        ? analysis.problems.map(p => `- ${p}`).join('\n')
+        : 'No major problems found. Great job!';
+
+    const improvements = analysis.improvements.length > 0
+        ? analysis.improvements.map(i => `- ${i}`).join('\n')
+        : 'Keep up the good work!';
+
+    return `
+### Viral Analysis
+**Viral Score:** ${analysis.viral_score}/100
+**Status:** ${analysis.status}
+
+---
+
+#### 🚨 Problems / Weaknesses
+${problems}
+
+---
+
+#### 💡 Improvement Suggestions
+${improvements}
+
+---
+
+#### ✨ Optimized Version
+**Title:** ${analysis.optimized_content.title}
+**Caption:** ${analysis.optimized_content.caption}
+**Hashtags:** ${analysis.optimized_content.hashtags.join(' ')}
+**CTA:** ${analysis.optimized_content.cta}
+
+**Script:**
+> ${analysis.optimized_content.script.replace(/\n/g, '\n> ')}
+
+---
+*Keep going, you are improving 🚀*
+    `.trim();
+}
+
+
 export async function sendMessage(input: ChatInput): Promise<string> {
   return chatFlow(input);
 }
@@ -40,33 +96,17 @@ const chatFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async ({ messages, topic }) => {
-    const systemPrompt = `You are an Advanced AI Content Analyzer & Growth Assistant for YouTube Shorts, Reels, and other short-form videos. Your name is Gemini, and you are smarter than a normal AI, combining the expertise of a ChatGPT Pro, a YouTube Expert, and a Marketing Expert. Your goal is to help users grow fast and go viral.
+    const systemPrompt = `You are an Advanced AI Content Analyzer & Growth Assistant for YouTube Shorts, Reels, and other short-form videos. Your name is Gemini. Your goal is to help users grow fast and go viral.
 
 **CORE RULES:**
 
-1.  **Language Matching:** Your most critical rule is to **always reply in the same language and style the user uses.** If they use Hindi, reply in Hindi. If Hinglish, reply in Hinglish. If professional English, match that tone.
+1.  **Language Matching:** Always generate your analysis in the same language and style the user uses (e.g., Hindi, Hinglish, English).
+2.  **Analysis Task:** When the user provides content for analysis (video, title, script, topic, etc.), perform a deep analysis and provide a viral score, status, problems, improvements, and a fully optimized version.
+3.  **Other Tasks:** Handle requests to "improve", "generate", "trend", or "growth" by focusing on that specific task within your analysis.
+4.  **Honest & Motivating:** Be direct and honest, but always be encouraging.
+5.  **Platform Focus:** Your analysis should focus on YouTube Shorts and Instagram Reels, using knowledge of the latest algorithm patterns and trends.
 
-2.  **Speed and Clarity:** Give fast, short, and clear answers.
-
-3.  **Analysis Task:** When the user provides content for analysis (like a video file, title, script, topic, or by using the word "analyze"), you MUST perform a deep analysis and structure your response using the following format.
-
-    *   **Viral Score:** Give a score from 0 to 100.
-    *   **Viral Potential:** State if it's Low ❌, Medium ⚠️, High 🚀, or Very High 🔥.
-    *   **Problems / Weaknesses:** Clearly identify the main issues (e.g., weak hook, bad title, low emotion, poor CTA).
-    *   **Improvement Suggestions:** Provide specific, actionable advice to fix the problems.
-    *   **Optimized Version:** Provide a fully rewritten, optimized version including a viral title, caption, hashtags, and a short script if applicable.
-
-4.  **Other Tasks:**
-    *   If the user asks to "improve", focus on rewriting their content.
-    *   If the user asks to "generate", create new content ideas from scratch.
-    *   If the user asks for "trends", provide the latest trending topics, music, and hooks.
-    *   If the user asks for "growth", give them a high-level strategy.
-
-5.  **Honest & Motivating Feedback:** Be direct and honest about the content's quality, even if it's bad. However, always be encouraging and end your responses with a motivating message. For example: "Keep going, you are improving 🚀"
-
-6.  **Platform & Trend Focus:** Your analysis should focus on YouTube Shorts and Instagram Reels. Use your knowledge of the latest algorithm patterns, audience behavior, and trends to inform your advice.
-
-**IMPORTANT:** Format your structured analysis beautifully using Markdown for the chat interface. Do **NOT** return raw JSON.`;
+**IMPORTANT:** You MUST return your response in the specified JSON format. Do NOT return Markdown or any other text format. Your entire output must be a single, valid JSON object that strictly follows the output schema.`;
 
     const allMessages = [...messages];
     // The last message is the new prompt
@@ -92,11 +132,21 @@ const chatFlow = ai.defineFlow(
       system: systemPrompt,
       prompt: promptParts,
       history,
+      output: { schema: AnalysisOutputSchema }, // Ask for structured JSON
       config: {
         temperature: 0.7,
       },
     });
 
-    return llmResponse.text;
+    const analysis = llmResponse.output;
+    if (!analysis) {
+        // Fallback for when structured output fails
+        const fallbackText = llmResponse.text;
+        if (fallbackText) return fallbackText;
+        return "Sorry, I couldn't analyze the content right now. Please try again.";
+    }
+    
+    // Format the JSON analysis into a user-friendly Markdown string
+    return formatAnalysisToMarkdown(analysis);
   }
 );
