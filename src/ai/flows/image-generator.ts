@@ -32,14 +32,17 @@ const imageGeneratorFlow = ai.defineFlow(
   },
   async ({ prompt }) => {
     const { media } = await ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
-        prompt: `A high-quality, photorealistic image of: ${prompt}`,
+        model: 'googleai/gemini-2.5-flash-image-preview',
+        prompt: [
+          { text: `A high-quality, photorealistic image of: ${prompt}` }
+        ],
         config: {
+            responseModalities: ['IMAGE', 'TEXT'],
             aspectRatio: '1:1', // Square image
         }
     });
     
-    if (!media.url) {
+    if (!media?.url) {
         throw new Error('Image generation failed to return a URL.');
     }
 
