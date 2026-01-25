@@ -8,7 +8,7 @@ import { useUser } from '@/firebase';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Home' },
-  { href: '/chat', icon: MessageCircle, label: 'Chat' },
+  { href: '/chat', icon: MessageCircle, label: 'Content Problem Solution Chat' },
 ];
 
 export function BottomNav() {
@@ -24,19 +24,19 @@ export function BottomNav() {
         {navItems.map((item) => {
             const isActive = item.href === pathname;
             
-            const className = "flex flex-col items-center justify-center gap-1 text-muted-foreground w-1/2 h-full rounded-lg";
+            const className = "flex flex-col items-center justify-center gap-1 text-muted-foreground w-1/2 h-full rounded-lg px-1 text-center";
             
             const children = (
                 <>
                     <item.icon className={cn('h-6 w-6 transition-colors', isActive ? 'text-primary' : 'text-foreground/60')} />
-                    <span className={cn('text-xs font-medium transition-colors',  isActive ? 'text-primary' : 'text-foreground/60')}>
+                    <span className={cn('text-xs font-medium transition-colors leading-tight',  isActive ? 'text-primary' : 'text-foreground/60')}>
                     {item.label}
                     </span>
                 </>
             );
 
             return (
-                <Link key={item.label} href={item.href} className={className}>
+                <Link key={item.href} href={item.href} className={className}>
                     {children}
                 </Link>
             );
