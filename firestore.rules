@@ -1,37 +1,31 @@
 /**
- * This ruleset enforces a strict user-ownership model for a ChatGPT-style application.
+ * This ruleset enforces a user-ownership model for a content creation application.
  *
  * Core Philosophy:
  * The security model is centered around the principle that users can only access their own
- * data. All user-generated content, including chat sessions and generated images, is
- * strictly segregated and accessible only by the authenticated owner.
+ * data. This is achieved by including a `userId` field in every document that contains
+ * user-specific data.
  *
  * Data Structure:
- * All user-specific data is nested hierarchically under the `/users/{userId}` path.
- * This structure includes subcollections for `images` and `history`,
- * ensuring that data access can be controlled simply by verifying ownership at the top
- * of the path. This design inherently secures queries and prevents data leakage.
+ * - /users/{userId}: Stores public-facing user profile information.
+ * - /history/{historyId}: Stores analysis history for all users, with each document
+ *   containing a `userId` field to link it to its owner.
  *
  * Key Security Decisions:
  * - User Enumeration Blocked: Listing documents in the top-level `/users` collection is
  *   explicitly disallowed to protect user privacy.
- * - Strict Ownership: All read and write operations on user content require the request's
- *   authentication UID to match the `{userId}` in the document path.
- * - Relational Integrity: On creation, documents must contain an ownership field (e.g., `userId`)
- *   that matches the user ID in the path. This field is enforced as immutable on updates,
- *   preventing documents from being reassigned to other users.
+ * - Strict Ownership on History: Users can only create, read, update, or delete history
+ *   documents where the `userId` field matches their own authentication UID. This prevents
+ *   any user from accessing another user's history.
+ * - Query Security for History: Listing documents from the top-level `/history`
+ *   collection is allowed, but it is the client application's responsibility to
+ *   implement and enforce queries that filter by the current user's ID to prevent
+ *   data leakage.
  *
  * Denormalization for Authorization:
- * This ruleset relies on the path structure itself (`/users/{userId}/...`) as the primary
- * mechanism for authorization. Additionally, documents in subcollections (like `images` and `history`) are 
- * expected to contain a denormalized `userId` field. This allows for
- * simple, fast, and secure validation rules without requiring expensive `get()` calls to
- * parent documents.
- *
- * Structural Segregation:
- * The data model effectively segregates different types of user data into distinct
- * subcollections (`/images`, `/history`). This creates clear boundaries and allows for
- * granular, path-based security rules that are easy to understand and maintain.
+ * This ruleset relies on a denormalized `userId` field within each document in the 
+ * `/history` collection. This allows for simple, fast, and secure validation rules
+ * without requiring expensive `get()` or `exists()` calls to other documents.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -56,32 +50,32 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Checks if the user is the owner and the document already exists.
-     * Essential for secure update and delete operations.
-     * @param userId The UID of the user to check against.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
-    }
-
     // ------------------------------------------------------------------------
     // Collection Rules
     // ------------------------------------------------------------------------
     
     match /users/{userId} {
+      // A user can view their own profile, but not others unless rules are changed.
+      // A user can delete their own account data.
       allow read, delete: if isOwner(userId);
-      allow create: if request.auth.uid == userId && request.resource.data.id == userId;
+      // A new user document can only be created by the user themselves, and the ID must match.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      // A user can only update their own profile, and they cannot change their ID.
       allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
-      allow list: if false; // Prevent user enumeration
+      // Prevent listing all users.
+      allow list: if false; 
     }
     
-    match /users/{userId}/images/{imageId} {
-      allow read, write, delete: if isOwner(userId);
-    }
+    match /history/{historyId} {
+      // Users can only create history items for themselves.
+      allow create: if isOwner(request.resource.data.userId);
 
-    match /users/{userId}/history/{historyId} {
-      allow read, write, delete: if isOwner(userId);
+      // Users can only read, update, or delete their own history items.
+      allow read, update, delete: if isOwner(resource.data.userId);
+      
+      // Allow a user to query for their own history items.
+      // IMPORTANT: Client queries MUST include `where("userId", "==", auth.uid)`
+      allow list: if isSignedIn();
     }
   }
 }

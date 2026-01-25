@@ -140,7 +140,7 @@ export default function ChatPage() {
           result: analysisResult,
           createdAt: serverTimestamp(),
       };
-      const historyColRef = collection(firestore, 'users', user.uid, 'history');
+      const historyColRef = collection(firestore, 'history');
       addDocumentNonBlocking(historyColRef, historyRecord);
 
       const aiResponseMarkdown = formatAnalysisToMarkdown(analysisResult);

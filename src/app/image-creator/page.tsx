@@ -5,17 +5,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Image as ImageIcon, Download } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 import NextImage from 'next/image';
 import { generateImage } from '@/ai/flows/image-generator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const formSchema = z.object({
   prompt: z.string().min(5, { message: 'Prompt must be at least 5 characters.' }),
@@ -25,7 +22,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function ImageCreatorPage() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
@@ -37,20 +33,13 @@ export default function ImageCreatorPage() {
     }
   }, [user, isUserLoading, router]);
   
-  const imagesQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'users', user.uid, 'images'), orderBy('createdAt', 'desc'));
-  }, [user, firestore]);
-  
-  const { data: userImages, isLoading: isLoadingImages } = useCollection<{ prompt: string, imageUrl: string, createdAt: any }>(imagesQuery);
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { prompt: '' },
   });
 
   const onSubmit = async (data: FormValues) => {
-    if (!user || !firestore) return;
+    if (!user) return;
     setIsLoading(true);
     setGeneratedImageUrl(null);
     setCurrentPrompt(data.prompt);
@@ -58,17 +47,6 @@ export default function ImageCreatorPage() {
     try {
       const result = await generateImage({ prompt: data.prompt });
       setGeneratedImageUrl(result.imageUrl);
-      
-      const imageRecord = {
-        userId: user.uid,
-        prompt: data.prompt,
-        imageUrl: result.imageUrl, // This will be a large data URI string
-        createdAt: serverTimestamp(),
-      };
-      
-      const colRef = collection(firestore, 'users', user.uid, 'images');
-      addDocumentNonBlocking(colRef, imageRecord);
-
     } catch (error) {
       console.error('Error generating image:', error);
       // TODO: Show toast on error
@@ -174,47 +152,6 @@ export default function ImageCreatorPage() {
             </CardContent>
         </Card>
       )}
-
-      <Card className="w-full mx-auto rounded-xl shadow-md">
-        <CardHeader>
-          <CardTitle>Your Gallery</CardTitle>
-          <CardDescription>
-            Images you have created before. Hover to see details and download.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[600px] w-full">
-            {isLoadingImages ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-                    {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-square w-full" />)}
-                 </div>
-            ) : userImages && userImages.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-                    {userImages.map((image) => (
-                        <div key={image.id} className="relative group aspect-square">
-                            <NextImage src={image.imageUrl} alt={image.prompt} fill className="object-cover rounded-lg" />
-                            <div className="absolute inset-0 bg-black/70 p-2 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity rounded-lg text-white">
-                                <p className="text-xs line-clamp-4">{image.prompt}</p>
-                                <Button size="sm" variant="secondary" className="w-full" onClick={() => handleDownload(image.imageUrl, image.prompt)}>
-                                    <Download className="mr-2 h-4 w-4" /> Download
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                 <div className="flex h-48 items-center justify-center rounded-lg border-2 border-dashed">
-                    <div className='text-center'>
-                        <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground" />
-                        <p className="text-muted-foreground mt-2">
-                         Your generated images will appear here.
-                        </p>
-                    </div>
-                </div>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
     </main>
   );
 }
