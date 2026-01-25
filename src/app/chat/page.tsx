@@ -100,9 +100,9 @@ export default function ChatPage() {
                 <div className='inline-block p-4 bg-primary/10 rounded-full'>
                   <Sparkles className="h-10 w-10 text-primary" />
                 </div>
-                <h1 className="text-4xl font-bold mt-4">Gemini</h1>
+                <h1 className="text-4xl font-bold mt-4">Content Strategy</h1>
                 <p className="text-muted-foreground mt-2">
-                  Start a conversation with your AI assistant.
+                  Your AI assistant for content strategy.
                 </p>
               </div>
             </div>
