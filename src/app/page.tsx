@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -41,6 +41,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { useUser } from '@/firebase';
 
 const formSchema = z.object({
   topic: z.string().min(2, {
@@ -120,6 +121,13 @@ export default function CreatePage() {
   const [generatedContent, setGeneratedContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -156,6 +164,15 @@ export default function CreatePage() {
     setGeneratedContent('');
     form.reset();
   };
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
 
   if (selectedTaskType) {
     return (
@@ -197,7 +214,7 @@ export default function CreatePage() {
                 />
                 <Button
                   type="submit"
-                  className="w-full rounded-lg text-lg py-6"
+                  className="w-full rounded-lg text-lg py-6 bg-accent text-accent-foreground hover:bg-accent/90"
                   disabled={isLoading}
                 >
                   {isLoading && (
@@ -243,7 +260,7 @@ export default function CreatePage() {
   return (
     <main className="container mx-auto max-w-3xl px-4 py-8">
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold tracking-tight text-accent">
+        <h1 className="text-4xl font-bold tracking-tight" style={{color: 'hsl(var(--primary))'}}>
           Desi Content Creator
         </h1>
         <p className="text-lg text-muted-foreground mt-2">

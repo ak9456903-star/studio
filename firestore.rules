@@ -62,131 +62,30 @@ service cloud.firestore {
      * @param userId The UID of the user to check against.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    // --- Relational Integrity Validation Functions (Prototyping) ---
-
-    /**
-     * Validates that a new User document contains a `id` field that matches
-     * the document's path ID.
-     */
-    function hasValidUserDataOnCreate(userId) {
-      return request.resource.data.id == userId;
-    }
-
-    /**
-     * Enforces immutability for critical fields on a User document.
-     * The user's unique ID (`id`) must never change.
-     */
-    function isUserDataImmutable() {
-      return request.resource.data.id == resource.data.id;
-    }
-
-    /**
-     * Validates that a new Chat document is correctly linked to its owner.
-     */
-    function hasValidChatDataOnCreate(userId) {
-      return request.resource.data.userId == userId;
-    }
-
-    /**
-     * Enforces immutability for the ownership field on a Chat document.
-     */
-    function isChatDataImmutable() {
-      return request.resource.data.userId == resource.data.userId;
-    }
-
-    /**
-     * Validates that a new ChatMessage document is correctly linked to its parent chat.
-     */
-    function hasValidChatMessageDataOnCreate(chatId) {
-      return request.resource.data.chatId == chatId;
-    }
-
-    /**
-     * Enforces immutability for the parent link field on a ChatMessage document.
-     */
-    function isChatMessageDataImmutable() {
-      return request.resource.data.chatId == resource.data.chatId;
-    }
-
-    /**
-     * Validates that a new Image document is correctly linked to its owner.
-     */
-    function hasValidImageDataOnCreate(userId) {
-      return request.resource.data.userId == userId;
-    }
-
-    /**
-     * Enforces immutability for the ownership field on an Image document.
-     */
-    function isImageDataImmutable() {
-      return request.resource.data.userId == resource.data.userId;
+      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
     }
 
     // ------------------------------------------------------------------------
     // Collection Rules
     // ------------------------------------------------------------------------
-
-    /**
-     * @description Manages user profile documents.
-     * @path /users/{userId}
-     * @allow (create) A new user can create their own profile document. `auth.uid` must match `{userId}`.
-     * @deny (list) Another user attempts to list all user profiles in the database.
-     * @principle Restricts access to a user's own data tree and prevents user enumeration.
-     */
+    
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId) && hasValidUserDataOnCreate(userId);
-      allow update: if isExistingOwner(userId) && isUserDataImmutable();
-      allow delete: if isExistingOwner(userId);
+      allow read, delete: if isOwner(userId);
+      allow create: if request.auth.uid == userId && request.resource.data.id == userId;
+      allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
+      allow list: if false; // Prevent user enumeration
     }
 
-    /**
-     * @description Manages user chat sessions. Each document represents a conversation.
-     * @path /users/{userId}/chats/{chatId}
-     * @allow (create) The authenticated user (`auth.uid` == `{userId}`) creates a new chat session.
-     * @deny (get) User 'A' attempts to read a chat session belonging to user 'B'.
-     * @principle Enforces document ownership within a user's private subcollection.
-     */
     match /users/{userId}/chats/{chatId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && hasValidChatDataOnCreate(userId);
-      allow update: if isExistingOwner(userId) && isChatDataImmutable();
-      allow delete: if isExistingOwner(userId);
+      allow read, write, delete: if isOwner(userId);
     }
-
-    /**
-     * @description Manages individual messages within a chat session.
-     * @path /users/{userId}/chats/{chatId}/messages/{messageId}
-     * @allow (list) The authenticated user (`auth.uid` == `{userId}`) lists messages in their own chat.
-     * @deny (update) User 'A' attempts to modify a message in a chat belonging to user 'B'.
-     * @principle Secures nested data by verifying ownership of the parent path.
-     */
+    
     match /users/{userId}/chats/{chatId}/messages/{messageId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && hasValidChatMessageDataOnCreate(chatId);
-      allow update: if isExistingOwner(userId) && isChatMessageDataImmutable();
-      allow delete: if isExistingOwner(userId);
+      allow read, write, delete: if isOwner(userId);
     }
-
-    /**
-     * @description Manages AI-generated images created by a user.
-     * @path /users/{userId}/images/{imageId}
-     * @allow (delete) The authenticated user (`auth.uid` == `{userId}`) deletes their own generated image.
-     * @deny (create) An unauthenticated user attempts to create an image record.
-     * @principle Enforces document ownership for user-generated content.
-     */
+    
     match /users/{userId}/images/{imageId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && hasValidImageDataOnCreate(userId);
-      allow update: if isExistingOwner(userId) && isImageDataImmutable();
-      allow delete: if isExistingOwner(userId);
+      allow read, write, delete: if isOwner(userId);
     }
   }
 }

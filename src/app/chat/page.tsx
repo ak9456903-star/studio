@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   message: z.string().min(1, { message: 'Message cannot be empty.' }),
@@ -26,6 +28,15 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<ElementRef<typeof ScrollArea>>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -70,6 +81,14 @@ export default function ChatPage() {
         }
     }
   }, [messages, isLoading]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -188,7 +207,7 @@ export default function ChatPage() {
                         <Button
                           type="submit"
                           size="icon"
-                          className="absolute right-1.5 flex h-9 w-9 items-center justify-center rounded-full"
+                          className="absolute right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
                           disabled={isLoading || !form.formState.isValid}
                         >
                           <Send className="h-5 w-5" />
