@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, ElementRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { sendMessage, type ChatMessage, type AnalysisOutput } from '@/ai/flows/chat-flow';
+import { type ChatMessage, type AnalysisOutput } from '@/ai/flows/chat-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, ThumbsDown, RefreshCw, Paperclip, X } from 'lucide-react';
@@ -128,10 +128,24 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      const analysisResult = await sendMessage({
-        messages: newMessages,
-        topic: 'Content Viral Potential Analysis',
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: newMessages,
+          topic: 'Content Viral Potential Analysis',
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'API request failed');
+      }
+
+      const analysisResult: AnalysisOutput = await response.json();
+
 
       const historyRecord = {
           userId: user.uid,

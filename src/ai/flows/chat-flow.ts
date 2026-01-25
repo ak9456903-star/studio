@@ -27,7 +27,7 @@ const ChatInputSchema = z.object({
   messages: z.array(ChatMessageSchema),
   topic: z.string().describe('The topic for the content.'),
 });
-type ChatInput = z.infer<typeof ChatInputSchema>;
+export type ChatInput = z.infer<typeof ChatInputSchema>;
 
 
 export const AnalysisOutputSchema = z.object({
