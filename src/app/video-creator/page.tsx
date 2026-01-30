@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -54,7 +55,6 @@ export default function VideoCreatorPage() {
     setIsLoading(false);
 
     if (result.error) {
-      console.error('Error generating video:', result.error);
       toast({
         variant: 'destructive',
         title: 'Video Generation Failed',
