@@ -128,23 +128,54 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: newMessages,
-          topic: 'Content Viral Potential Analysis',
-        }),
-      });
+      const customApiUrl = localStorage.getItem('customApiUrl');
+      let analysisResult: AnalysisOutput;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'API request failed');
+      if (customApiUrl) {
+        // Use the user-provided custom API
+        const response = await fetch(customApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.uid,
+              mode: 'analyze', // Assuming mode is always analyze for now
+              content: userMessage.content,
+              // Note: The custom API example doesn't show media upload.
+              // This implementation will not send media to the custom API.
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Custom API request failed');
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            throw new Error('Custom API returned an invalid response.');
+        }
+        analysisResult = result.data;
+
+      } else {
+        // Use the default built-in API
+        const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+            messages: newMessages,
+            topic: 'Content Viral Potential Analysis',
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'API request failed');
+        }
+
+        analysisResult = await response.json();
       }
-
-      const analysisResult: AnalysisOutput = await response.json();
 
 
       const historyRecord = {
