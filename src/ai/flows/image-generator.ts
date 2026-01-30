@@ -34,11 +34,10 @@ const imageGeneratorFlow = ai.defineFlow(
     const { media } = await ai.generate({
         model: 'googleai/gemini-2.5-flash-image-preview',
         prompt: [
-          { text: `A high-quality, photorealistic image of: ${prompt}` }
+          { text: `A high-quality, photorealistic square image of: ${prompt}` }
         ],
         config: {
             responseModalities: ['IMAGE', 'TEXT'],
-            aspectRatio: '1:1', // Square image
         }
     });
     

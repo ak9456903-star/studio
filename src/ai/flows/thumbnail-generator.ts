@@ -32,7 +32,7 @@ const thumbnailGeneratorFlow = ai.defineFlow(
   },
   async ({ title }) => {
     // A more detailed prompt to guide the AI in creating a good thumbnail.
-    const prompt = `Create a vibrant, high-contrast, and click-worthy YouTube thumbnail for a video titled: "${title}". 
+    const prompt = `Create a vibrant, high-contrast, and click-worthy YouTube thumbnail with a 16:9 aspect ratio for a video titled: "${title}". 
     The image should be visually striking, emotionally engaging, and relevant to the video title.
     Focus on a central, clear subject. Use bold colors.
     IMPORTANT: Do NOT include any text in the image itself. The title will be overlayed later.`;
@@ -44,7 +44,6 @@ const thumbnailGeneratorFlow = ai.defineFlow(
         ],
         config: {
             responseModalities: ['IMAGE', 'TEXT'],
-            aspectRatio: '16:9', // YouTube thumbnail aspect ratio
         }
     });
     
