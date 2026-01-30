@@ -18,7 +18,8 @@ const GenerateVideoInputSchema = z.object({
 export type GenerateVideoInput = z.infer<typeof GenerateVideoInputSchema>;
 
 const GenerateVideoOutputSchema = z.object({
-    videoUrl: z.string().describe("The data URI of the generated video."),
+    videoUrl: z.string().describe("The data URI of the generated video.").optional(),
+    error: z.string().describe("An error message if video generation fails.").optional(),
 });
 export type GenerateVideoOutput = z.infer<typeof GenerateVideoOutputSchema>;
 
@@ -46,7 +47,7 @@ const videoGeneratorFlow = ai.defineFlow(
       });
 
       if (!operation) {
-        throw new Error('Expected the model to return an operation');
+        return { error: 'Video generation process failed to start.' };
       }
 
       // Wait until the operation completes. This may take a while.
@@ -56,22 +57,21 @@ const videoGeneratorFlow = ai.defineFlow(
       }
 
       if (operation.error) {
-        throw new Error(`Failed to generate video: ${operation.error.message}`);
+        throw new Error(operation.error.message);
       }
 
       const videoPart: any = operation.output?.message?.content.find((p: any) => !!p.media);
       if (!videoPart?.media?.url) {
-        throw new Error('Failed to find the generated video URL in the operation result.');
+        return { error: 'Failed to find the generated video in the operation result.' };
       }
       
       // The URL is a signed URL to download the video. We need to fetch it and convert to a data URI.
-      // The google-genai plugin requires an API key for this download step, which is assumed to be in the environment.
       const videoDownloadResponse = await fetch(
         `${videoPart.media.url}&key=${process.env.GEMINI_API_KEY}`
       );
 
       if (!videoDownloadResponse.ok || !videoDownloadResponse.body) {
-          throw new Error(`Failed to download video from generated URL: ${videoDownloadResponse.statusText}`);
+          return { error: `Failed to download video file: ${videoDownloadResponse.statusText}` };
       }
       
       const videoBuffer = await videoDownloadResponse.arrayBuffer();
@@ -83,11 +83,12 @@ const videoGeneratorFlow = ai.defineFlow(
         videoUrl: `data:${contentType};base64,${videoBase64}`,
       };
     } catch (e: any) {
-        if (e.message && (e.message.includes('billing enabled') || e.message.includes('User location is not supported'))) {
-            throw new Error('This feature requires a billing-enabled Google Cloud account and is not available in all regions. Please check your project settings.');
+        let errorMessage = e.message || 'An unexpected error occurred.';
+        if (errorMessage.includes('billing enabled') || errorMessage.includes('User location is not supported')) {
+            errorMessage = 'This feature requires a billing-enabled Google Cloud account and is not available in all regions. Please check your project settings.';
         }
-        // Re-throw other errors
-        throw e;
+        console.error("Video Generation Flow Error:", errorMessage);
+        return { error: errorMessage };
     }
   }
 );

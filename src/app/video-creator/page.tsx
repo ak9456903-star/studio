@@ -49,18 +49,25 @@ export default function VideoCreatorPage() {
     setGeneratedVideoUrl(null);
     setCurrentPrompt(data.prompt);
 
-    try {
-      const result = await generateVideo({ prompt: data.prompt, duration: data.duration[0] });
-      setGeneratedVideoUrl(result.videoUrl);
-    } catch (error) {
-      console.error('Error generating video:', error);
+    const result = await generateVideo({ prompt: data.prompt, duration: data.duration[0] });
+
+    setIsLoading(false);
+
+    if (result.error) {
+      console.error('Error generating video:', result.error);
       toast({
         variant: 'destructive',
         title: 'Video Generation Failed',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
+        description: result.error,
       });
-    } finally {
-      setIsLoading(false);
+    } else if (result.videoUrl) {
+      setGeneratedVideoUrl(result.videoUrl);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Video Generation Failed',
+        description: 'An unknown error occurred. Please try again.',
+      });
     }
   };
 
