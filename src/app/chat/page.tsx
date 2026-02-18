@@ -7,11 +7,10 @@ import { z } from 'zod';
 import { type ChatMessage, type AnalysisOutput } from '@/ai/flows/chat-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, Paperclip, X, Zap, Bot, Check, Image as ImageIcon, Video, BarChart3 } from 'lucide-react';
+import { Loader2, Send, Sparkles, Copy, Paperclip, X, Zap, Bot, Check, Image as ImageIcon, Video, BarChart3 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
@@ -39,34 +38,19 @@ function formatAnalysisToMarkdown(analysis: AnalysisOutput): string {
 
     const opt = analysis.optimized_content;
 
-    let markdown = `${analysis.chat_response ? `${analysis.chat_response}\n\n` : ''}`;
+    let markdown = analysis.chat_response ? `${analysis.chat_response}\n\n` : '';
     
-    markdown += `### 📊 Viral Analysis Summary
----
-- **Viral Score:** \`${analysis.viral_score || 'N/A'}/100\`
-- **Status:** **${analysis.status || 'Ready to Post'}**
-
-#### 🚨 Critical Feedback
-${problems}
-
-#### 💡 Suggested Tweaks
-${improvements}
-`;
+    markdown += `### 📊 Viral Analysis Summary\n---\n- **Viral Score:** \`${analysis.viral_score || 'N/A'}/100\`\n- **Status:** **${analysis.status || 'Ready to Post'}**\n\n#### 🚨 Critical Feedback\n${problems}\n\n#### 💡 Suggested Tweaks\n${improvements}\n`;
 
     if (opt) {
-        markdown += `
-#### ✨ Optimized Version
-> **Title:** ${opt.title || 'N/A'}
-> **Caption:** ${opt.caption || 'N/A'}
-> **Hashtags:** ${(opt.hashtags || []).join(' ')}
-> **CTA:** ${opt.cta || 'N/A'}
-
-${opt.script ? `**Script / Hook Enhancement:**\n\`\`\`text\n${opt.script}\n\`\`\`` : ''}
-`;
+        markdown += `\n#### ✨ Optimized Version\n> **Title:** ${opt.title || 'N/A'}\n> **Caption:** ${opt.caption || 'N/A'}\n> **Hashtags:** ${(opt.hashtags || []).join(' ')}\n> **CTA:** ${opt.cta || 'N/A'}\n`;
+        
+        if (opt.script) {
+            markdown += `\n**Script / Hook Enhancement:**\n\`\`\`text\n${opt.script}\n\`\`\`\n`;
+        }
     }
 
-    markdown += `\n---
-*Keep creating! You're one post away from going viral. 🚀*`;
+    markdown += `\n---\n*Keep creating! You're one post away from going viral. 🚀*`;
 
     return markdown.trim();
 }
@@ -114,7 +98,7 @@ export default function SmartChatPage() {
   const onSubmit = async (data: FormValues) => {
     if (!user || !firestore) return;
 
-    let userMessage: ChatMessage = { role: 'user', content: data.message };
+    const userMessage: ChatMessage = { role: 'user', content: data.message };
     if (mediaPreview && mediaType) userMessage.media = { url: mediaPreview, type: mediaType };
     
     const newMessages: ChatMessage[] = [...messages, userMessage];
@@ -132,7 +116,19 @@ export default function SmartChatPage() {
           body: JSON.stringify({ messages: newMessages })
       });
 
-      if (!response.ok) throw new Error('API Error');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error('API Error: Could not get response from AI.');
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('Non-JSON response received:', text);
+          throw new Error('The AI returned an unexpected response format. Please try again.');
+      }
+
       const result = await response.json();
       const analysis: AnalysisOutput = result.answer; 
 
@@ -149,8 +145,12 @@ export default function SmartChatPage() {
       }
       
       setMessages((prev) => [...prev, { role: 'model', content: aiResponseContent }]);
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Oops!', description: 'I had a small hiccup. Can you try again?' });
+    } catch (error: any) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Oops!', 
+        description: error.message || 'I had a small hiccup. Can you try again?' 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -179,9 +179,9 @@ export default function SmartChatPage() {
   }
 
   const suggestions = [
-    { text: 'Image Generator idea', icon: <ImageIcon className="h-3.5 w-3.5 text-yellow-500" /> },
-    { text: 'Video Generator script', icon: <Video className="h-3.5 w-3.5 text-blue-500" /> },
-    { text: 'Analyze my content', icon: <BarChart3 className="h-3.5 w-3.5 text-purple-500" /> },
+    { text: 'Create a landscape image', icon: <ImageIcon className="h-3.5 w-3.5 text-yellow-500" /> },
+    { text: 'Video generate karega call AI API', icon: <Video className="h-3.5 w-3.5 text-blue-500" /> },
+    { text: 'Analyze my script potential', icon: <BarChart3 className="h-3.5 w-3.5 text-purple-500" /> },
     { text: 'Viral hook for reels?', icon: <Sparkles className="h-3.5 w-3.5 text-pink-500" /> },
     { text: 'Trending hashtags?', icon: <Bot className="h-3.5 w-3.5 text-green-500" /> },
     { text: 'Quick YouTube title', icon: <Zap className="h-3.5 w-3.5 text-orange-500" /> },
