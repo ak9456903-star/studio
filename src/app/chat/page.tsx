@@ -189,7 +189,7 @@ export default function SmartChatPage() {
   const suggestions = [
     { text: 'Create a landscape image', icon: <ImageIcon className="h-3.5 w-3.5 text-yellow-500" /> },
     { text: 'Video generator idea', icon: <Video className="h-3.5 w-3.5 text-blue-500" /> },
-    { text: 'Analyze my script potential', icon: <BarChart3 className="h-3.5 w-3.5 text-purple-500" /> },
+    { text: 'Analyze videos and images', icon: <BarChart3 className="h-3.5 w-3.5 text-purple-500" /> },
     { text: 'Viral hook for reels?', icon: <Sparkles className="h-3.5 w-3.5 text-pink-500" /> },
     { text: 'Trending hashtags?', icon: <Bot className="h-3.5 w-3.5 text-green-500" /> },
     { text: 'Quick YouTube title', icon: <Zap className="h-3.5 w-3.5 text-orange-500" /> },
