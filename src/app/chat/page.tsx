@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { type ChatMessage, type AnalysisOutput } from '@/ai/flows/chat-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, ThumbsDown, RefreshCw, Paperclip, X } from 'lucide-react';
+import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, ThumbsDown, RefreshCw, Paperclip, X, Zap } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -15,10 +15,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import NextImage from 'next/image';
 import { collection, serverTimestamp } from 'firebase/firestore';
-
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
   message: z.string(),
@@ -66,10 +67,13 @@ ${improvements}
     `.trim();
 }
 
-
 export default function ChatPage() {
+  const searchParams = useSearchParams();
+  const initialMode = searchParams.get('mode') === 'analyze' ? false : true; // default to fast chat
+  
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFastMode, setIsFastMode] = useState(initialMode);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<string | null>(null);
   const scrollAreaRef = useRef<ElementRef<typeof ScrollArea>>(null);
@@ -77,7 +81,6 @@ export default function ChatPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -114,7 +117,7 @@ export default function ChatPage() {
     }
 
     if (!userMessage.content && !userMessage.media) {
-        return; // Don't send empty message
+        return;
     }
 
     const newMessages: ChatMessage[] = [...messages, userMessage];
@@ -129,60 +132,55 @@ export default function ChatPage() {
 
     try {
       const customApiUrl = localStorage.getItem('customApiUrl');
-      let analysisResult: AnalysisOutput;
-
-      const response = await fetch(customApiUrl || '/api/analyze', {
+      const apiPath = isFastMode ? '/api/chat' : '/api/analyze';
+      
+      const response = await fetch(customApiUrl || apiPath, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(customApiUrl ? {
             userId: user.uid,
-            mode: 'analyze',
+            mode: isFastMode ? 'chat' : 'analyze',
             content: userMessage.content,
           } : {
             messages: newMessages,
-            topic: 'Content Viral Potential Analysis',
+            topic: isFastMode ? 'General Chat' : 'Viral Content Analysis',
           })
       });
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('Non-JSON response received:', text);
-          throw new Error('The API returned an unexpected response format. Please check your API URL.');
+          throw new Error('The API returned an unexpected response format.');
       }
 
       const result = await response.json();
 
       if (!response.ok) {
-          throw new Error(result.error || result.message || 'API request failed');
+          throw new Error(result.error || 'API request failed');
       }
 
-      if (customApiUrl) {
-          if (!result.success || !result.data) {
-              throw new Error('Custom API returned an invalid data structure.');
-          }
-          analysisResult = result.data;
-      } else {
-          analysisResult = result;
-      }
-
-
-      const historyRecord = {
-          userId: user.uid,
-          mode: 'analyze',
-          content: userMessage.content,
-          result: analysisResult,
-          createdAt: serverTimestamp(),
-      };
-      const historyColRef = collection(firestore, 'history');
-      addDocumentNonBlocking(historyColRef, historyRecord);
-
-      const aiResponseMarkdown = formatAnalysisToMarkdown(analysisResult);
+      let aiResponseContent = '';
       
-      setMessages((prev) => [...prev, { role: 'model', content: aiResponseMarkdown }]);
+      if (isFastMode) {
+          aiResponseContent = result.answer || result.data?.answer || 'I am here to help!';
+      } else {
+          const analysisResult = customApiUrl ? result.data : result;
+          aiResponseContent = formatAnalysisToMarkdown(analysisResult);
+          
+          // Save analysis to history
+          const historyRecord = {
+              userId: user.uid,
+              mode: 'analyze',
+              content: userMessage.content,
+              result: analysisResult,
+              createdAt: serverTimestamp(),
+          };
+          addDocumentNonBlocking(collection(firestore, 'history'), historyRecord);
+      }
+      
+      setMessages((prev) => [...prev, { role: 'model', content: aiResponseContent }]);
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Sorry, something went wrong. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
       setMessages((prev) => [
         ...prev,
         { role: 'model', content: `**Error:** ${errorMessage}` },
@@ -215,17 +213,39 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
+      {/* Header with toggle */}
+      <div className="flex items-center justify-between p-4 border-b bg-card/50 backdrop-blur-sm sticky top-0 z-20">
+        <div className="flex items-center gap-2">
+          {isFastMode ? <Zap className="h-5 w-5 text-yellow-500 fill-yellow-500" /> : <Sparkles className="h-5 w-5 text-primary" />}
+          <h1 className="font-bold">{isFastMode ? 'Fast Chat' : 'Viral Analyzer'}</h1>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="mode-toggle" className="text-xs text-muted-foreground">
+            {isFastMode ? 'Switch to Analysis' : 'Switch to Fast Chat'}
+          </Label>
+          <Switch 
+            id="mode-toggle" 
+            checked={!isFastMode} 
+            onCheckedChange={(checked) => setIsFastMode(!checked)} 
+          />
+        </div>
+      </div>
+
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
-        <div className="mx-auto max-w-3xl w-full space-y-8 p-4 pb-24">
+        <div className="mx-auto max-w-3xl w-full space-y-8 p-4 pb-32">
           {messages.length === 0 && !isLoading && (
-            <div className="flex h-[calc(100vh_-_15rem)] items-center justify-center">
+            <div className="flex h-[calc(100vh_-_20rem)] items-center justify-center">
               <div className='text-center'>
-                <div className='inline-block p-4 bg-primary/10 rounded-full'>
-                  <Sparkles className="h-10 w-10 text-primary" />
+                <div className='inline-block p-4 bg-primary/10 rounded-full mb-4'>
+                  {isFastMode ? <Zap className="h-10 w-10 text-yellow-500" /> : <Sparkles className="h-10 w-10 text-primary" />}
                 </div>
-                <h1 className="text-4xl font-bold mt-4">Content Strategy</h1>
-                <p className="text-muted-foreground mt-2 max-w-md">
-                  Upload your Instagram Reels or YouTube Shorts to get feedback on its viral potential!
+                <h2 className="text-3xl font-bold">
+                  {isFastMode ? 'Fast Chat & Answers' : 'Deep Content Analysis'}
+                </h2>
+                <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+                  {isFastMode 
+                    ? 'Ask me anything for instant help with your content ideas!' 
+                    : 'Upload your Reels or Shorts to see if they will go viral!'}
                 </p>
               </div>
             </div>
@@ -234,22 +254,22 @@ export default function ChatPage() {
             <div
               key={index}
               className={cn(
-                'flex items-start gap-4',
+                'flex items-start gap-3',
               )}
             >
               {message.role === 'model' ? (
-                <Avatar className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center">
-                  <Sparkles className="h-5 w-5" />
+                <Avatar className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                  {isFastMode ? <Zap className="h-4 w-4 fill-white" /> : <Sparkles className="h-4 w-4" />}
                 </Avatar>
               ) : (
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    <User />
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarFallback className="bg-muted">
+                    <User className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
               )}
              
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 {message.media && (
                     <div className="mb-2">
                         {message.media.type.startsWith('image/') ? (
@@ -261,10 +281,9 @@ export default function ChatPage() {
                 )}
                  <div
                     className={cn(
-                      'max-w-full rounded-lg p-3 text-sm prose dark:prose-invert',
-                      {'bg-muted': message.role === 'user'},
-                      {'bg-card': message.role === 'model'},
-                      {'mt-2': message.media}
+                      'max-w-full rounded-2xl p-4 text-sm prose dark:prose-invert shadow-sm',
+                      {'bg-muted/50 rounded-tl-none': message.role === 'user'},
+                      {'bg-card border rounded-tl-none': message.role === 'model'},
                     )}
                   >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -272,15 +291,12 @@ export default function ChatPage() {
                     </ReactMarkdown>
                 </div>
                 {message.role === 'model' && !message.content.startsWith('**Error:**') && (
-                  <div className="flex items-center gap-1 mt-2 text-muted-foreground">
+                  <div className="flex items-center gap-1 mt-2 text-muted-foreground opacity-50 hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" className='h-7 w-7' onClick={() => handleCopy(message.content)}>
                       <Copy className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className='h-7 w-7'>
                       <ThumbsUp className="h-4 w-4" />
-                    </Button>
-                     <Button variant="ghost" size="icon" className='h-7 w-7'>
-                      <ThumbsDown className="h-4 w-4" />
                     </Button>
                      <Button variant="ghost" size="icon" className='h-7 w-7'>
                       <RefreshCw className="h-4 w-4" />
@@ -291,34 +307,35 @@ export default function ChatPage() {
             </div>
           ))}
           {isLoading && (
-            <div className="flex items-start gap-4">
-              <Avatar className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center">
-                <Sparkles className="h-5 w-5" />
+            <div className="flex items-start gap-3">
+              <Avatar className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center animate-pulse">
+                {isFastMode ? <Zap className="h-4 w-4 fill-white" /> : <Sparkles className="h-4 w-4" />}
               </Avatar>
-              <div className="bg-card rounded-lg p-3 flex items-center shadow-sm">
+              <div className="bg-card border rounded-2xl p-4 flex items-center shadow-sm">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-xs text-muted-foreground">{isFastMode ? 'Thinking fast...' : 'Analyzing viral potential...'}</span>
               </div>
             </div>
           )}
         </div>
       </ScrollArea>
 
-      <div className="fixed bottom-16 left-0 right-0 bg-background/95 backdrop-blur-sm border-t">
-        <div className="container mx-auto max-w-3xl py-3 px-4">
+      <div className="fixed bottom-16 left-0 right-0 bg-background/95 backdrop-blur-sm border-t p-3">
+        <div className="container mx-auto max-w-3xl">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               {mediaPreview && (
-                <div className="relative mb-2 w-fit">
+                <div className="relative mb-3 p-1 bg-muted rounded-xl w-fit">
                   {mediaType?.startsWith('image/') ? (
-                    <NextImage src={mediaPreview} alt="Preview" width={100} height={100} className="rounded-md object-cover" />
+                    <NextImage src={mediaPreview} alt="Preview" width={80} height={80} className="rounded-lg object-cover" />
                   ) : (
-                    <video src={mediaPreview} width="200" controls className="rounded-md" />
+                    <video src={mediaPreview} width="120" className="rounded-lg" />
                   )}
                   <Button
                     type="button"
                     variant="destructive"
                     size="icon"
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-lg"
                     onClick={() => { setMediaPreview(null); setMediaType(null); if(mediaInputRef.current) mediaInputRef.current.value = ''; }}
                   >
                     <X className="h-4 w-4" />
@@ -336,12 +353,11 @@ export default function ChatPage() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="absolute left-1 flex h-9 w-9 items-center justify-center rounded-full"
+                          className="absolute left-2 flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted"
                           onClick={() => mediaInputRef.current?.click()}
                           disabled={isLoading}
                         >
-                          <Paperclip className="h-5 w-5 text-muted-foreground" />
-                          <span className="sr-only">Attach media</span>
+                          <Paperclip className="h-4 w-4 text-muted-foreground" />
                         </Button>
                         <Input
                           type="file"
@@ -351,19 +367,21 @@ export default function ChatPage() {
                           onChange={handleFileChange}
                         />
                         <Input
-                          placeholder="Add a comment or just send the media..."
+                          placeholder={isFastMode ? "Type a quick message..." : "Paste script or upload content for analysis..."}
                           autoComplete="off"
-                          className="h-12 w-full rounded-full bg-muted pl-12 pr-14 text-base"
+                          className="h-12 w-full rounded-full bg-muted/50 border-none pl-12 pr-14 text-sm focus-visible:ring-1 focus-visible:ring-primary shadow-inner"
                           {...field}
                         />
                         <Button
                           type="submit"
                           size="icon"
-                          className="absolute right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground hover:bg-accent/90"
+                          className={cn(
+                            "absolute right-1.5 flex h-9 w-9 items-center justify-center rounded-full transition-all",
+                            isFastMode ? "bg-yellow-500 hover:bg-yellow-600 text-white" : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                          )}
                           disabled={isLoading || (!form.getValues().message && !mediaPreview)}
                         >
-                          <Send className="h-5 w-5" />
-                          <span className="sr-only">Send message</span>
+                          {isFastMode ? <Zap className="h-4 w-4 fill-white" /> : <Send className="h-4 w-4" />}
                         </Button>
                       </div>
                     </FormControl>

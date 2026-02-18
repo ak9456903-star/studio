@@ -37,6 +37,7 @@ import {
   Youtube,
   Image as ImageIcon,
   Video,
+  Zap,
 } from 'lucide-react';
 import {
   Form,
@@ -61,51 +62,27 @@ type Task = {
   description: string;
   icon: React.ReactNode;
   href?: string;
+  badge?: string;
 };
 
 const toolsByCategory: { category: string; icon: React.ReactNode; tasks: Task[] }[] = [
   {
-    category: 'Instagram',
-    icon: <Instagram className="h-6 w-6" />,
+    category: 'Fast AI Assistants',
+    icon: <Zap className="h-6 w-6 text-yellow-500" />,
     tasks: [
       {
-        name: 'Instagram Caption',
-        description: 'Generate viral captions for your posts.',
-        icon: <MessageSquareText className="h-8 w-8 text-primary" />,
+        name: 'Fast Chat & Answers',
+        description: 'Instant answers and creative help.',
+        icon: <Zap className="h-8 w-8 text-yellow-500" />,
+        href: '/chat?mode=fast',
+        badge: 'FAST'
       },
       {
-        name: 'Instagram Bio',
-        description: 'Create a cool and professional bio.',
-        icon: <UserSquare2 className="h-8 w-8 text-primary" />,
-      },
-    ],
-  },
-  {
-    category: 'YouTube',
-    icon: <Youtube className="h-6 w-6" />,
-    tasks: [
-      {
-        name: 'YouTube Title',
-        description: 'Get click-worthy titles for your videos.',
-        icon: <Clapperboard className="h-8 w-8 text-primary" />,
-      },
-      {
-        name: 'YouTube Thumbnail',
-        description: 'Generate a thumbnail from a video title.',
-        icon: <ImageIcon className="h-8 w-8 text-primary" />,
-      },
-    ],
-  },
-  {
-    category: 'AI Assistant',
-    icon: <MessageCircle className="h-6 w-6" />,
-    tasks: [
-        {
-            name: 'Chat with Gemini',
-            description: 'Have a conversation with our AI assistant.',
-            icon: <Sparkles className="h-8 w-8 text-primary" />,
-            href: '/chat'
-        }
+          name: 'Viral Potential Analyzer',
+          description: 'Deep analysis of your Reels and Shorts.',
+          icon: <Sparkles className="h-8 w-8 text-primary" />,
+          href: '/chat?mode=analyze'
+      }
     ]
   },
   {
@@ -127,18 +104,39 @@ const toolsByCategory: { category: string; icon: React.ReactNode; tasks: Task[] 
     ],
   },
   {
-    category: 'General',
-    icon: <Sparkles className="h-6 w-6" />,
+    category: 'YouTube & Instagram',
+    icon: <Youtube className="h-6 w-6" />,
+    tasks: [
+      {
+        name: 'Instagram Caption',
+        description: 'Generate viral captions for your posts.',
+        icon: <Instagram className="h-8 w-8 text-pink-500" />,
+      },
+      {
+        name: 'YouTube Title',
+        description: 'Get click-worthy titles for your videos.',
+        icon: <Clapperboard className="h-8 w-8 text-red-500" />,
+      },
+      {
+        name: 'YouTube Thumbnail',
+        description: 'Generate a thumbnail from a video title.',
+        icon: <ImageIcon className="h-8 w-8 text-red-500" />,
+      },
+    ],
+  },
+  {
+    category: 'General Tools',
+    icon: <Hash className="h-6 w-6" />,
     tasks: [
       {
         name: 'Hashtag Generator',
         description: 'Find the best hashtags to boost reach.',
-        icon: <Hash className="h-8 w-8 text-primary" />,
+        icon: <Hash className="h-8 w-8 text-blue-500" />,
       },
       {
         name: 'Motivation/Bhakti',
         description: 'Inspirational quotes in simple Hindi.',
-        icon: <Quote className="h-8 w-8 text-primary" />,
+        icon: <Quote className="h-8 w-8 text-orange-500" />,
       },
     ],
   },
@@ -330,7 +328,7 @@ export default function CreatePage() {
           Desi Content Creator
         </h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Your one-stop AI for viral Indian content 🇮🇳
+          यथेष्ट AI for viral Indian content 🇮🇳
         </p>
       </div>
 
@@ -345,12 +343,19 @@ export default function CreatePage() {
               {category.tasks.map((task) => (
                 <Card
                   key={task.name}
-                  className="w-full max-w-2xl mx-auto rounded-xl shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+                  className="w-full max-w-2xl mx-auto rounded-xl shadow-md hover:shadow-lg transition-shadow cursor-pointer relative overflow-hidden group"
                   onClick={() => handleTaskSelect(task)}
                 >
+                  {task.badge && (
+                    <div className="absolute top-2 right-2 bg-yellow-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 animate-pulse">
+                      {task.badge}
+                    </div>
+                  )}
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      {task.icon}
+                      <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
+                        {task.icon}
+                      </div>
                       <div>
                         <h3 className="font-semibold text-lg">{task.name}</h3>
                         <p className="text-sm text-muted-foreground">
@@ -358,7 +363,7 @@ export default function CreatePage() {
                         </p>
                       </div>
                     </div>
-                    <ChevronRight className="h-6 w-6 text-muted-foreground" />
+                    <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
                   </CardContent>
                 </Card>
               ))}

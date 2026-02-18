@@ -1,15 +1,10 @@
 'use server';
 /**
- * @fileOverview A chat AI flow that maintains conversation history.
- *
- * - sendMessage - A function that handles sending a message to the AI.
- * - ChatMessage - The type for a chat message (user or model).
- * - ChatInput - The input type for the sendMessage function.
- * - AnalysisOutput - The structured output from the AI analysis.
+ * @fileOverview AI flows for both deep content analysis and fast chatting.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const MediaPartSchema = z.object({
   url: z.string().describe('The data URI of the media content.'),
@@ -25,10 +20,9 @@ export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 const ChatInputSchema = z.object({
   messages: z.array(ChatMessageSchema),
-  topic: z.string().describe('The topic for the content.'),
+  topic: z.string().optional().describe('The topic for the content.'),
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
-
 
 const AnalysisOutputSchema = z.object({
     viral_score: z.string().describe('The viral score from 0 to 100.'),
@@ -45,12 +39,22 @@ const AnalysisOutputSchema = z.object({
 });
 export type AnalysisOutput = z.infer<typeof AnalysisOutputSchema>;
 
-
-export async function sendMessage(input: ChatInput): Promise<AnalysisOutput> {
+/**
+ * Performs a deep content analysis for viral potential.
+ */
+export async function analyzeContent(input: ChatInput): Promise<AnalysisOutput> {
   const result = await chatFlow(input);
   if (!result) {
     throw new Error("AI analysis failed to produce a result.");
   }
+  return result;
+}
+
+/**
+ * Provides a fast, direct answer to the user's message.
+ */
+export async function fastChat(input: ChatInput): Promise<string> {
+  const result = await quickChatFlow(input);
   return result;
 }
 
@@ -60,38 +64,12 @@ const chatFlow = ai.defineFlow(
     inputSchema: ChatInputSchema,
     outputSchema: AnalysisOutputSchema,
   },
-  async ({ messages, topic }) => {
-    const systemPrompt = `You are an Advanced AI Content Analyzer & Growth Assistant for YouTube Shorts, Instagram Reels, and Facebook Reels.
+  async ({ messages }) => {
+    const systemPrompt = `You are an Advanced AI Content Analyzer & Growth Assistant.
+    Analyze the user's content (text, image, or video) and provide a detailed viral potential report in JSON format.
+    Reply in the user's language (Hindi, Hinglish, or English).`;
 
-**CORE INSTRUCTIONS:**
-
-1.  **LANGUAGE RULE:** Reply in the same language and style as the user (e.g., Hindi, Hinglish, or English).
-
-2.  **TASK MODES:** Based on the user's request, perform one of the following tasks:
-    *   **"analyze"**: Deeply analyze the provided content (title, script, video, etc.).
-    *   **"improve"**: Rewrite the user's content to be better and more viral.
-    *   **"generate"**: Create new viral content ideas from a topic.
-    *   **"trend"**: Provide the latest trending ideas (music, topics, hooks).
-    *   **"growth"**: Give the user a high-level growth strategy.
-
-3.  **ANALYSIS & SCORING:** When analyzing, use this rubric to calculate the viral score:
-    *   Strong hook: +20
-    *   High Emotion: +20
-    *   Trend Relevance: +20
-    *   Watch Retention Potential: +20
-    *   CTA & SEO: +20
-
-4.  **FEEDBACK STYLE:** Always be honest. If content is weak, state it clearly but always follow up with motivating and actionable advice.
-
-5.  **OUTPUT FORMAT:** Your entire output MUST be a single, valid JSON object that strictly follows the output schema. Do NOT return any other text, markdown, or commentary outside of the pure JSON structure.
-`;
-
-    // The last message in the array is the user's new prompt.
     const lastMessage = messages[messages.length - 1];
-    if (!lastMessage || lastMessage.role !== 'user') {
-        throw new Error("The last message must be from the user to analyze.");
-    }
-    
     const promptParts: any[] = [{ text: lastMessage.content }];
     if (lastMessage.media) {
       promptParts.push({ media: { url: lastMessage.media.url } });
@@ -101,16 +79,34 @@ const chatFlow = ai.defineFlow(
       system: systemPrompt,
       prompt: promptParts,
       output: { schema: AnalysisOutputSchema },
-      config: {
-        temperature: 0.7,
-      },
+      config: { temperature: 0.7 },
     });
 
-    const analysis = llmResponse.output;
-    if (!analysis) {
-        throw new Error("Sorry, I couldn't analyze the content right now. Please try again.");
-    }
-    
-    return analysis;
+    if (!llmResponse.output) throw new Error("Analysis failed.");
+    return llmResponse.output;
+  }
+);
+
+const quickChatFlow = ai.defineFlow(
+  {
+    name: 'quickChatFlow',
+    inputSchema: ChatInputSchema,
+    outputSchema: z.string(),
+  },
+  async ({ messages }) => {
+    const systemPrompt = `You are a helpful and extremely fast AI assistant for Indian content creators.
+    Reply concisely and directly in the user's language (Hindi, Hinglish, or English).
+    Avoid long explanations unless asked. Be friendly and motivating.`;
+
+    const llmResponse = await ai.generate({
+      system: systemPrompt,
+      prompt: messages.map(m => ({ 
+        role: m.role, 
+        content: m.media ? [{ text: m.content }, { media: { url: m.media.url } }] : [{ text: m.content }] 
+      })),
+      config: { temperature: 0.5 },
+    });
+
+    return llmResponse.text;
   }
 );
