@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { type ChatMessage, type AnalysisOutput } from '@/ai/flows/chat-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, Sparkles, Copy, Paperclip, X, Zap, Bot, Check, Image as ImageIcon, Video, BarChart3 } from 'lucide-react';
+import { Loader2, Send, Sparkles, Copy, Paperclip, X, Zap, Bot, Check, Image as ImageIcon, Video, BarChart3, Plus } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -101,6 +101,18 @@ export default function SmartChatPage() {
         };
         reader.readAsDataURL(file);
     }
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setMediaPreview(null);
+    setMediaType(null);
+    form.reset();
+    if (mediaInputRef.current) mediaInputRef.current.value = '';
+    toast({
+        title: "Chat Reset",
+        description: "Started a fresh conversation.",
+    });
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -211,8 +223,19 @@ export default function SmartChatPage() {
             </p>
           </div>
         </div>
-        <div className="px-3 py-1 bg-muted rounded-full text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            Auto-Detect
+        <div className="flex items-center gap-2">
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleNewChat}
+                className="h-8 gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
+            >
+                <Plus className="h-3.5 w-3.5" />
+                New Chat
+            </Button>
+            <div className="px-3 py-1 bg-muted rounded-full text-[10px] font-bold uppercase tracking-wider text-muted-foreground hidden sm:block">
+                Auto-Detect
+            </div>
         </div>
       </header>
 
