@@ -29,11 +29,8 @@ import {
   Hash,
   Instagram,
   Loader2,
-  MessageCircle,
-  MessageSquareText,
   Quote,
   Sparkles,
-  UserSquare2,
   Youtube,
   Image as ImageIcon,
   Video,
@@ -86,20 +83,14 @@ const toolsByCategory: { category: string; icon: React.ReactNode; tasks: Task[] 
     ]
   },
   {
-    category: 'Creative Tools',
+    category: 'Creative Studio',
     icon: <Sparkles className="h-6 w-6" />,
     tasks: [
       {
-        name: 'AI Photo Creator',
-        description: 'Turn your text prompts into images.',
-        icon: <ImageIcon className="h-8 w-8 text-primary" />,
-        href: '/image-creator',
-      },
-      {
-        name: 'AI Video Creator',
-        description: 'Bring your ideas to life with video.',
-        icon: <Video className="h-8 w-8 text-primary" />,
-        href: '/video-creator',
+        name: 'Photo & Video Creator',
+        description: 'Generate stunning AI photos and videos in one place.',
+        icon: <Sparkles className="h-8 w-8 text-primary" />,
+        href: '/creative-studio',
       },
     ],
   },
