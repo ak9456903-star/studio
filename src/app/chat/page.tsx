@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { type ChatMessage, type AnalysisOutput } from '@/ai/flows/chat-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, Paperclip, X, Zap, Bot } from 'lucide-react';
+import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, Paperclip, X, Zap, Bot, Check } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -21,7 +21,7 @@ import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
-  message: z.string(),
+  message: z.string().min(1, "Message cannot be empty"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -31,44 +31,44 @@ function formatAnalysisToMarkdown(analysis: AnalysisOutput): string {
 
     const problems = (analysis.problems || []).length > 0
         ? analysis.problems!.map(p => `- ${p}`).join('\n')
-        : 'No major problems found. Great job!';
+        : 'No major weaknesses found! Your hook looks solid. ✅';
 
     const improvements = (analysis.improvements || []).length > 0
         ? analysis.improvements!.map(i => `- ${i}`).join('\n')
-        : 'Keep up the good work!';
+        : 'You\'re on the right track! Just keep the consistency going.';
 
     const opt = analysis.optimized_content;
 
-    return `
-### 📊 Viral Potential Analysis
-**Viral Score:** ${analysis.viral_score || 'N/A'}/100
-**Status:** ${analysis.status || 'Ready'}
-
+    let markdown = `${analysis.chat_response ? `${analysis.chat_response}\n\n` : ''}`;
+    
+    markdown += `### 📊 Viral Analysis Summary
 ---
+- **Viral Score:** \`${analysis.viral_score || 'N/A'}/100\`
+- **Status:** **${analysis.status || 'Ready to Post'}**
 
-#### 🚨 Problems / Weaknesses
+#### 🚨 Critical Feedback
 ${problems}
 
----
-
-#### 💡 Improvement Suggestions
+#### 💡 Suggested Tweaks
 ${improvements}
+`;
 
----
-
-${opt ? `
+    if (opt) {
+        markdown += `
 #### ✨ Optimized Version
-**Title:** ${opt.title || 'N/A'}
-**Caption:** ${opt.caption || 'N/A'}
-**Hashtags:** ${(opt.hashtags || []).join(' ')}
-**CTA:** ${opt.cta || 'N/A'}
+> **Title:** ${opt.title || 'N/A'}
+> **Caption:** ${opt.caption || 'N/A'}
+> **Hashtags:** ${(opt.hashtags || []).join(' ')}
+> **CTA:** ${opt.cta || 'N/A'}
 
-${opt.script ? `**Script:**\n> ${opt.script.replace(/\n/g, '\n> ')}` : ''}
-` : ''}
+${opt.script ? `**Script / Hook Enhancement:**\n\`\`\`text\n${opt.script}\n\`\`\`` : ''}
+`;
+    }
 
----
-*Keep creating, you're doing great! 🚀*
-    `.trim();
+    markdown += `\n---
+*Keep creating! You're one post away from going viral. 🚀*`;
+
+    return markdown.trim();
 }
 
 export default function SmartChatPage() {
@@ -76,6 +76,7 @@ export default function SmartChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
   const scrollAreaRef = useRef<ElementRef<typeof ScrollArea>>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const { user, isUserLoading } = useUser();
@@ -97,6 +98,10 @@ export default function SmartChatPage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+            toast({ variant: 'destructive', title: 'File too large', description: 'Please upload a file smaller than 5MB.' });
+            return;
+        }
         const reader = new FileReader();
         reader.onload = (e) => {
             setMediaPreview(e.target?.result as string);
@@ -111,8 +116,7 @@ export default function SmartChatPage() {
 
     let userMessage: ChatMessage = { role: 'user', content: data.message };
     if (mediaPreview && mediaType) userMessage.media = { url: mediaPreview, type: mediaType };
-    if (!userMessage.content && !userMessage.media) return;
-
+    
     const newMessages: ChatMessage[] = [...messages, userMessage];
     setMessages(newMessages);
     form.reset();
@@ -128,7 +132,7 @@ export default function SmartChatPage() {
           body: JSON.stringify({ messages: newMessages })
       });
 
-      if (!response.ok) throw new Error('Request failed');
+      if (!response.ok) throw new Error('API Error');
       const result = await response.json();
       const analysis: AnalysisOutput = result.answer; 
 
@@ -146,15 +150,17 @@ export default function SmartChatPage() {
       
       setMessages((prev) => [...prev, { role: 'model', content: aiResponseContent }]);
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'AI is currently busy. Try again later.' });
+      toast({ variant: 'destructive', title: 'Oops!', description: 'I had a small hiccup. Can you try again?' });
     } finally {
       setIsLoading(false);
     }
   };
   
-  const handleCopy = (text: string) => {
+  const handleCopy = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
-    toast({ title: 'Copied', description: 'Text copied to clipboard.' });
+    setCopiedId(index);
+    setTimeout(() => setCopiedId(null), 2000);
+    toast({ title: 'Copied!', description: 'Response saved to clipboard.' });
   };
 
   useEffect(() => {
@@ -166,122 +172,185 @@ export default function SmartChatPage() {
 
   if (isUserLoading || !user) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <div className="flex items-center justify-between p-4 border-b bg-card/50 backdrop-blur-sm sticky top-0 z-20">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-primary/10 rounded-lg">
+    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
+      {/* Header */}
+      <header className="flex items-center justify-between p-4 border-b bg-card/40 backdrop-blur-md sticky top-0 z-30">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-primary/15 rounded-xl">
             <Bot className="h-5 w-5 text-primary" />
           </div>
-          <h1 className="font-bold">Smart AI Assistant</h1>
+          <div>
+            <h1 className="text-sm font-bold leading-none">Smart Assistant</h1>
+            <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                AI Model Online
+            </p>
+          </div>
         </div>
-        <div className="text-[10px] uppercase tracking-widest text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            Auto-Detect Mode
+        <div className="px-3 py-1 bg-muted rounded-full text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Auto-Detect
         </div>
-      </div>
+      </header>
 
+      {/* Chat Area */}
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
-        <div className="mx-auto max-w-3xl w-full space-y-8 p-4 pb-32">
+        <div className="mx-auto max-w-3xl w-full flex flex-col gap-6 p-6 pb-40">
           {messages.length === 0 && !isLoading && (
-            <div className="flex h-[calc(100vh_-_20rem)] items-center justify-center">
-              <div className='text-center space-y-6'>
-                <div className='inline-flex items-center gap-4'>
-                    <div className='p-4 bg-yellow-500/10 rounded-2xl'>
-                        <Zap className="h-8 w-8 text-yellow-500" />
-                    </div>
-                    <div className='p-4 bg-primary/10 rounded-2xl'>
-                        <Sparkles className="h-8 w-8 text-primary" />
+            <div className="flex flex-col h-[60vh] items-center justify-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full"></div>
+                    <div className="relative p-6 bg-card border rounded-3xl shadow-xl">
+                        <Sparkles className="h-10 w-10 text-primary" />
                     </div>
                 </div>
-                <div>
-                    <h2 className="text-3xl font-bold">How can I help you today?</h2>
-                    <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-                      Paste a script for analysis, ask a quick question, or upload an image. I'll automatically detect what you need!
-                    </p>
+                <h2 className="text-2xl font-bold tracking-tight">How can I help you?</h2>
+                <p className="text-muted-foreground mt-3 max-w-xs leading-relaxed">
+                  Send a script for analysis, ask for video ideas, or just say hi. I'll detect what you need!
+                </p>
+                <div className="grid grid-cols-2 gap-3 mt-8 w-full">
+                    {['Viral hook for reels?', 'Optimize my script', 'Trending hashtags?', 'Quick YouTube title'].map((suggestion) => (
+                        <button 
+                            key={suggestion}
+                            onClick={() => form.setValue('message', suggestion)}
+                            className="text-xs p-3 bg-card border rounded-xl hover:bg-muted transition-colors text-left font-medium"
+                        >
+                            {suggestion}
+                        </button>
+                    ))}
                 </div>
-              </div>
             </div>
           )}
+
           {messages.map((message, index) => (
-            <div key={index} className="flex items-start gap-3">
-              <Avatar className={cn("h-8 w-8 shrink-0", message.role === 'model' ? "bg-primary" : "bg-muted")}>
-                {message.role === 'model' ? (
-                  <Bot className="h-4 w-4 text-white" />
-                ) : (
-                  <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+            <div 
+                key={index} 
+                className={cn(
+                    "flex flex-col gap-3 max-w-[85%]",
+                    message.role === 'user' ? "ml-auto items-end" : "mr-auto items-start"
                 )}
-              </Avatar>
-             
-              <div className="flex-1 min-w-0">
+            >
+              <div className="flex items-center gap-2 px-1">
+                  {message.role === 'model' ? (
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">AI Assistant</span>
+                  ) : (
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">You</span>
+                  )}
+              </div>
+
+              <div className="group relative">
                 {message.media && (
-                    <div className="mb-2">
+                    <div className="mb-3 overflow-hidden rounded-2xl border shadow-sm">
                         {message.media.type.startsWith('image/') ? (
-                            <NextImage src={message.media.url} alt="Upload" width={300} height={300} className="rounded-lg object-cover" />
+                            <NextImage src={message.media.url} alt="User Upload" width={400} height={400} className="w-full h-auto object-cover" />
                         ) : (
-                            <video src={message.media.url} controls className="max-w-xs rounded-lg" />
+                            <video src={message.media.url} controls className="w-full" />
                         )}
                     </div>
                 )}
-                 <div className={cn(
-                      'max-w-full rounded-2xl p-4 text-sm prose dark:prose-invert shadow-sm',
-                      message.role === 'user' ? 'bg-muted/50 rounded-tl-none' : 'bg-card border rounded-tl-none'
-                 )}>
+                
+                <div className={cn(
+                    'p-4 rounded-3xl text-sm leading-relaxed shadow-sm prose dark:prose-invert max-w-none',
+                    message.role === 'user' 
+                        ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                        : 'bg-card border rounded-tl-none'
+                )}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                 </div>
+
                 {message.role === 'model' && (
-                  <div className="flex items-center gap-1 mt-2 text-muted-foreground opacity-50 hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className='h-7 w-7' onClick={() => handleCopy(message.content)}><Copy className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className='h-7 w-7'><ThumbsUp className="h-4 w-4" /></Button>
-                  </div>
+                    <div className="absolute top-0 -right-12 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-full bg-card border"
+                            onClick={() => handleCopy(message.content, index)}
+                        >
+                            {copiedId === index ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                    </div>
                 )}
               </div>
             </div>
           ))}
+
           {isLoading && (
-            <div className="flex items-start gap-3">
-              <Avatar className="h-8 w-8 bg-primary animate-pulse">
-                <Bot className="h-4 w-4 text-white" />
-              </Avatar>
-              <div className="bg-card border rounded-2xl p-4 flex items-center shadow-sm">
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                <span className="ml-2 text-xs text-muted-foreground">Detecting intent and thinking...</span>
-              </div>
+            <div className="flex flex-col gap-3 mr-auto items-start animate-pulse">
+                <span className="text-[10px] font-bold text-primary uppercase tracking-tighter px-1">Thinking...</span>
+                <div className="bg-card border rounded-3xl rounded-tl-none p-5 flex items-center gap-3">
+                    <div className="flex gap-1">
+                        <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce"></span>
+                        <span className="w-1.5 h-1.5 bg-primary/70 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                    </div>
+                </div>
             </div>
           )}
         </div>
       </ScrollArea>
 
-      <div className="fixed bottom-16 left-0 right-0 bg-background/95 backdrop-blur-sm border-t p-3">
+      {/* Footer / Input */}
+      <div className="fixed bottom-16 left-0 right-0 p-4 pb-6 bg-gradient-to-t from-background via-background/95 to-transparent z-40">
         <div className="container mx-auto max-w-3xl">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {mediaPreview && (
-                <div className="relative mb-3 p-1 bg-muted rounded-xl w-fit">
+                <div className="relative mb-2 p-1.5 bg-card border rounded-2xl w-fit animate-in zoom-in-95">
                   {mediaType?.startsWith('image/') ? (
-                    <NextImage src={mediaPreview} alt="Preview" width={80} height={80} className="rounded-lg object-cover" />
+                    <NextImage src={mediaPreview} alt="Preview" width={100} height={100} className="rounded-xl object-cover aspect-square" />
                   ) : (
-                    <video src={mediaPreview} width="120" className="rounded-lg" />
+                    <video src={mediaPreview} width="160" className="rounded-xl aspect-video object-cover" />
                   )}
-                  <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-lg" onClick={() => { setMediaPreview(null); setMediaType(null); if(mediaInputRef.current) mediaInputRef.current.value = ''; }}><X className="h-3 w-3" /></Button>
+                  <Button 
+                    type="button" 
+                    variant="destructive" 
+                    size="icon" 
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-lg border-2 border-background" 
+                    onClick={() => { setMediaPreview(null); setMediaType(null); if(mediaInputRef.current) mediaInputRef.current.value = ''; }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               )}
+              
               <FormField
                 control={form.control}
                 name="message"
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <div className="relative flex w-full items-center">
-                        <Button type="button" variant="ghost" size="icon" className="absolute left-2 h-8 w-8 rounded-full" onClick={() => mediaInputRef.current?.click()} disabled={isLoading}><Paperclip className="h-4 w-4 text-muted-foreground" /></Button>
+                      <div className="relative flex items-center bg-card border rounded-[2rem] shadow-lg p-1.5 transition-shadow focus-within:ring-2 focus-within:ring-primary/20">
+                        <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-10 w-10 rounded-full hover:bg-muted" 
+                            onClick={() => mediaInputRef.current?.click()} 
+                            disabled={isLoading}
+                        >
+                            <Paperclip className="h-5 w-5 text-muted-foreground" />
+                        </Button>
                         <input type="file" accept="image/*,video/*" ref={mediaInputRef} className="hidden" onChange={handleFileChange} />
-                        <Input placeholder="Type anything... I'll detect what you need!" autoComplete="off" className="h-12 w-full rounded-full bg-muted/50 border-none pl-12 pr-14 text-sm focus-visible:ring-1 focus-visible:ring-primary" {...field} />
-                        <Button type="submit" size="icon" className="absolute right-1.5 h-9 w-9 rounded-full bg-primary" disabled={isLoading || (!form.getValues().message && !mediaPreview)}>
+                        
+                        <Input 
+                            placeholder="Message AI Assistant..." 
+                            autoComplete="off" 
+                            className="h-11 border-none bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm px-2" 
+                            {...field} 
+                        />
+                        
+                        <Button 
+                            type="submit" 
+                            size="icon" 
+                            className="h-10 w-10 rounded-full shrink-0 shadow-sm" 
+                            disabled={isLoading || (!form.getValues().message.trim() && !mediaPreview)}
+                        >
                           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         </Button>
                       </div>
@@ -289,6 +358,9 @@ export default function SmartChatPage() {
                   </FormItem>
                 )}
               />
+              <p className="text-[10px] text-center text-muted-foreground opacity-50">
+                AI may generate inaccurate info. Check viral potential score for best results.
+              </p>
             </form>
           </Form>
         </div>

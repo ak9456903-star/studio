@@ -24,9 +24,9 @@ const ChatInputSchema = z.object({
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
 const AnalysisOutputSchema = z.object({
-    is_analysis: z.boolean().describe('True if the user is asking for content analysis or optimization.'),
+    is_analysis: z.boolean().describe('True if the user is asking for content analysis, script optimization, or viral check.'),
     viral_score: z.string().optional().describe('The viral score from 0 to 100.'),
-    status: z.string().optional().describe('The viral potential status.'),
+    status: z.string().optional().describe('The viral potential status (e.g., High Potential, Needs Work).'),
     problems: z.array(z.string()).optional().describe('Weaknesses in the content.'),
     improvements: z.array(z.string()).optional().describe('Suggestions for improvement.'),
     optimized_content: z.object({
@@ -36,7 +36,7 @@ const AnalysisOutputSchema = z.object({
         script: z.string().optional(),
         cta: z.string().optional(),
     }).optional(),
-    chat_response: z.string().optional().describe('Concise chat response if NOT a deep analysis.'),
+    chat_response: z.string().optional().describe('Friendly, helpful, and detailed ChatGPT-style response if NOT a deep analysis or as a preamble.'),
 });
 export type AnalysisOutput = z.infer<typeof AnalysisOutputSchema>;
 
@@ -54,15 +54,22 @@ const smartChatFlow = ai.defineFlow(
     outputSchema: AnalysisOutputSchema,
   },
   async ({ messages }) => {
-    const systemPrompt = `You are a Smart AI Content Assistant for Indian Creators.
+    const systemPrompt = `You are a World-Class AI Content Assistant for Indian Creators, inspired by the conversational excellence of ChatGPT.
     
-    TASK:
-    1. Detect Intent: Is the user asking for content analysis, script optimization, viral potential, or thumbnail ideas? 
-       - If YES: Set is_analysis = true and fill out the analysis fields.
-       - If NO (e.g., "Hi", "Tell me a joke", "How are you?"): Set is_analysis = false and provide a friendly chat_response.
+    INTENT DETECTION:
+    1. If the user provides a script, title, or video idea and asks for feedback, viral potential, or optimization:
+       - Set is_analysis = true.
+       - Provide a detailed viral analysis including score, problems, and improvements.
+       - Offer an optimized version of their content.
+    2. If the user asks a general question, wants to brainstorm, or is just chatting:
+       - Set is_analysis = false.
+       - Provide a "ChatGPT-style" response: helpful, conversational, well-formatted, and insightful.
 
-    2. Language: Reply in the user's language (Hindi, Hinglish, or English).
-    3. Media: If an image or video is provided, prioritize analyzing its visual quality and hook potential.`;
+    GUIDELINES:
+    - LANGUAGE: Always match the user's language (Hindi, Hinglish, or English).
+    - FORMATTING: Use Markdown for beautiful formatting (bold, lists, headers).
+    - PERSONALITY: Be encouraging, professional, and culturally relevant to India.
+    - MEDIA: If they upload an image/video, analyze its visual hook and aesthetic.`;
 
     const lastMessage = messages[messages.length - 1];
     const promptParts: any[] = [{ text: lastMessage.content }];
@@ -74,7 +81,7 @@ const smartChatFlow = ai.defineFlow(
       system: systemPrompt,
       prompt: promptParts,
       output: { schema: AnalysisOutputSchema },
-      config: { temperature: 0.7 },
+      config: { temperature: 0.75 },
     });
 
     if (!llmResponse.output) throw new Error("AI failed to respond.");
