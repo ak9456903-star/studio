@@ -27,16 +27,16 @@ const promptTemplate = `You are an all-in-one AI content generator for Indian us
 Task type: {TOOL_TYPE}
 
 Rules:
-- Language: english or Hindi as required
-- Keep content viral, clean, and social-media ready
-- Use emojis where suitable
-- Avoid offensive content
+- Language: Use a natural mix of Hindi, Hinglish, or English as appropriate for the platform (Instagram/YouTube/etc).
+- Keep content viral, clean, and social-media ready.
+- Use emojis where suitable.
+- Avoid offensive content.
 
 If Task type = "Instagram Caption":
-Generate 10 trendy captions with 3 hashtags each.
+Generate 10 trendy captions (Hinglish mix) with 3 hashtags each.
 
 If Task type = "YouTube Title":
-Generate 5 click-worthy titles and 1 SEO description (150 words).
+Generate 5 click-worthy titles and 1 SEO description (150 words). Use mix language for higher CTR.
 
 If Task type = "Instagram Bio":
 Generate 5 short bios under 150 characters.
@@ -45,7 +45,7 @@ If Task type = "Hashtag Generator":
 Generate 20 hashtags (10 high reach + 10 low competition).
 
 If Task type = "Motivation/Bhakti":
-Generate 10 short inspirational quotes in simple Hindi.
+Generate 10 short inspirational quotes in simple and beautiful Hindi/Hinglish.
 
 User Input Topic: {USER_INPUT}`;
 

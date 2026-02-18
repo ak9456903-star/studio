@@ -250,7 +250,7 @@ export default function SmartChatPage() {
                         <Sparkles className="h-10 w-10 text-primary" />
                     </div>
                 </div>
-                <h2 className="text-2xl font-bold tracking-tight">How can I help you?</h2>
+                <h2 className="text-2xl font-bold tracking-tight">नमस्ते! मैं आपकी कैसे मदद कर सकता हूँ?</h2>
                 <p className="text-muted-foreground mt-3 max-w-xs leading-relaxed">
                   Upload a video (even 20-30 min long) or share a script. I'll optimize it for maximum virality!
                 </p>
