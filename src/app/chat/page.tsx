@@ -19,6 +19,9 @@ import NextImage from 'next/image';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 const formSchema = z.object({
   message: z.string().min(1, "Message cannot be empty"),
 });
@@ -82,8 +85,13 @@ export default function SmartChatPage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-        if (file.size > 5 * 1024 * 1024) {
-            toast({ variant: 'destructive', title: 'File too large', description: 'Please upload a file smaller than 5MB.' });
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            toast({ 
+              variant: 'destructive', 
+              title: 'File too large', 
+              description: `Please upload a file smaller than ${MAX_FILE_SIZE_MB}MB.` 
+            });
+            if (mediaInputRef.current) mediaInputRef.current.value = '';
             return;
         }
         const reader = new FileReader();
@@ -369,7 +377,7 @@ export default function SmartChatPage() {
                 )}
               />
               <p className="text-[10px] text-center text-muted-foreground opacity-50">
-                AI may generate inaccurate info. Check viral potential score for best results.
+                AI may generate inaccurate info. Max file size: {MAX_FILE_SIZE_MB}MB.
               </p>
             </form>
           </Form>
