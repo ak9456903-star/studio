@@ -1,58 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { Balancer } from 'react-wrap-balancer';
-import NextImage from 'next/image';
-import {
-  generateContent,
-  type GenerateContentInput,
-} from '@/ai/flows/content-generator';
-import { generateThumbnail } from '@/ai/flows/thumbnail-generator';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import {
-  ArrowLeft,
-  ChevronRight,
-  Clapperboard,
-  Download,
-  Hash,
-  Instagram,
-  Loader2,
-  Quote,
-  Sparkles,
-  Youtube,
-  Image as ImageIcon,
-  Video,
-  Zap,
-} from 'lucide-react';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { useUser } from '@/firebase';
-
-const formSchema = z.object({
-  topic: z.string().min(2, {
-    message: 'Topic must be at least 2 characters.',
-  }),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Loader2, 
+  Sparkles, 
+  Video, 
+  Zap, 
+  Search, 
+  ChevronRight,
+  Instagram,
+  Clapperboard,
+  Hash,
+  Quote,
+  Image as ImageIcon,
+  Youtube
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type Task = {
   name: string;
@@ -60,84 +27,66 @@ type Task = {
   icon: React.ReactNode;
   href?: string;
   badge?: string;
+  color?: string;
 };
 
-const toolsByCategory: { category: string; icon: React.ReactNode; tasks: Task[] }[] = [
+const mainActions = [
   {
-    category: 'Fast AI Assistants',
-    icon: <Zap className="h-6 w-6 text-yellow-500" />,
-    tasks: [
-      {
-        name: 'Fast Chat & Answers',
-        description: 'Instant answers and creative help.',
-        icon: <Zap className="h-8 w-8 text-yellow-500" />,
-        href: '/chat?mode=fast',
-        badge: 'FAST'
-      },
-      {
-          name: 'Viral Potential Analyzer',
-          description: 'Deep analysis of your Reels and Shorts.',
-          icon: <Sparkles className="h-8 w-8 text-primary" />,
-          href: '/chat?mode=analyze'
-      }
-    ]
+    name: 'Create image',
+    icon: <ImageIcon className="h-5 w-5 text-yellow-500" />,
+    href: '/image-creator',
   },
   {
-    category: 'Creative Studio',
-    icon: <Sparkles className="h-6 w-6" />,
-    tasks: [
-      {
-        name: 'Photo & Video Creator',
-        description: 'Generate stunning AI photos and videos in one place.',
-        icon: <Sparkles className="h-8 w-8 text-primary" />,
-        href: '/creative-studio',
-      },
-    ],
+    name: 'Create video',
+    icon: <Video className="h-5 w-5 text-blue-400" />,
+    href: '/video-creator',
   },
   {
-    category: 'YouTube & Instagram',
-    icon: <Youtube className="h-6 w-6" />,
+    name: 'Viral analysis',
+    icon: <Sparkles className="h-5 w-5 text-purple-400" />,
+    href: '/chat?mode=analyze',
+  },
+  {
+    name: 'Fast chat',
+    icon: <Zap className="h-5 w-5 text-yellow-400" />,
+    href: '/chat?mode=fast',
+  },
+];
+
+const secondaryTools = [
+  {
+    category: 'Social Media Powerups',
+    icon: <Youtube className="h-5 w-5" />,
     tasks: [
       {
         name: 'Instagram Caption',
         description: 'Generate viral captions for your posts.',
-        icon: <Instagram className="h-8 w-8 text-pink-500" />,
+        icon: <Instagram className="h-6 w-6 text-pink-500" />,
+        href: '/chat?mode=fast',
       },
       {
         name: 'YouTube Title',
         description: 'Get click-worthy titles for your videos.',
-        icon: <Clapperboard className="h-8 w-8 text-red-500" />,
+        icon: <Clapperboard className="h-6 w-6 text-red-500" />,
+        href: '/chat?mode=fast',
       },
-      {
-        name: 'YouTube Thumbnail',
-        description: 'Generate a thumbnail from a video title.',
-        icon: <ImageIcon className="h-8 w-8 text-red-500" />,
-      },
-    ],
-  },
-  {
-    category: 'General Tools',
-    icon: <Hash className="h-6 w-6" />,
-    tasks: [
       {
         name: 'Hashtag Generator',
         description: 'Find the best hashtags to boost reach.',
-        icon: <Hash className="h-8 w-8 text-blue-500" />,
+        icon: <Hash className="h-6 w-6 text-blue-500" />,
+        href: '/chat?mode=fast',
       },
       {
         name: 'Motivation/Bhakti',
         description: 'Inspirational quotes in simple Hindi.',
-        icon: <Quote className="h-8 w-8 text-orange-500" />,
+        icon: <Quote className="h-6 w-6 text-orange-500" />,
+        href: '/chat?mode=fast',
       },
     ],
   },
 ];
 
 export default function CreatePage() {
-  const [selectedTaskType, setSelectedTaskType] = useState<string | null>(null);
-  const [generatedContent, setGeneratedContent] = useState('');
-  const [generatedImageUrl, setGeneratedImageUrl] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { user, isUserLoading } = useUser();
 
@@ -147,220 +96,82 @@ export default function CreatePage() {
     }
   }, [user, isUserLoading, router]);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      topic: '',
-    },
-  });
-
-  const onSubmit = async (data: FormValues) => {
-    if (!selectedTaskType) return;
-
-    setIsLoading(true);
-    setGeneratedContent('');
-    setGeneratedImageUrl('');
-
-    try {
-      if (selectedTaskType === 'YouTube Thumbnail') {
-        const result = await generateThumbnail({ title: data.topic });
-        setGeneratedImageUrl(result.imageUrl);
-      } else {
-        const result = await generateContent({
-          taskType: selectedTaskType,
-          topic: data.topic,
-        });
-        setGeneratedContent(result);
-      }
-    } catch (error) {
-      console.error('Error generating content:', error);
-      setGeneratedContent('Failed to generate content. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleTaskSelect = (task: Task) => {
-    if (task.href) {
-      router.push(task.href);
-      return;
-    }
-    setSelectedTaskType(task.name);
-    setGeneratedContent('');
-    setGeneratedImageUrl('');
-    form.reset();
-  };
-
-  const handleDownload = (imageUrl: string, prompt: string) => {
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    const filename = prompt.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 50) || 'generated-image';
-    link.download = `${filename}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   if (isUserLoading || !user) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-black">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
 
-
-  if (selectedTaskType) {
-    const isImageTask = selectedTaskType === 'YouTube Thumbnail';
-    const currentTopic = form.watch('topic');
-
-    return (
-      <main className="container mx-auto max-w-3xl px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => setSelectedTaskType(null)}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to all tools
-        </Button>
-        <Card className="w-full max-w-2xl mx-auto rounded-xl shadow-md mb-8">
-          <CardHeader>
-            <CardTitle className="text-2xl">{selectedTaskType}</CardTitle>
-            <CardDescription>
-              {isImageTask
-                ? 'Enter a video title to generate a thumbnail.'
-                : 'Enter a topic to generate content.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="topic"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{isImageTask ? 'Video Title' : 'Topic'}</FormLabel>
-                      <FormControl>
-                        <Input
-                          className="rounded-lg"
-                          placeholder={
-                            isImageTask
-                              ? 'e.g., My Awesome Trip to Manali'
-                              : 'e.g., Diwali celebration, new recipe...'
-                          }
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full rounded-lg text-lg py-6 bg-accent text-accent-foreground hover:bg-accent/90"
-                  disabled={isLoading}
-                >
-                  {isLoading && (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  )}
-                  {isImageTask ? 'Generate Thumbnail' : 'Generate Content'}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        <Card className="w-full max-w-2xl mx-auto rounded-xl shadow-md min-h-[300px]">
-          <CardHeader>
-            <CardTitle>Generated Content</CardTitle>
-            <CardDescription>
-              Your AI-generated content will appear here.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center h-48 gap-4">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-muted-foreground">Generating...</p>
-              </div>
-            ) : generatedImageUrl ? (
-              <div className="relative group aspect-video">
-                <NextImage src={generatedImageUrl} alt={currentTopic} fill className="object-contain rounded-lg" />
-                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                    <Button variant="outline" onClick={() => handleDownload(generatedImageUrl, currentTopic)}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Download
-                    </Button>
-                </div>
-              </div>
-            ) : generatedContent ? (
-              <div className="whitespace-pre-wrap rounded-lg bg-muted p-4 text-sm font-mono">
-                <Balancer>{generatedContent}</Balancer>
-              </div>
-            ) : (
-              <div className="flex h-48 items-center justify-center rounded-lg border-2 border-dashed">
-                <p className="text-muted-foreground">
-                  Your content will appear here.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </main>
-    );
-  }
+  const firstName = user.displayName?.split(' ')[0] || 'Creator';
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-8">
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold tracking-tight" style={{color: 'hsl(var(--primary))'}}>
-          Desi Content Creator
-        </h1>
-        <p className="text-lg text-muted-foreground mt-2">
-          यथेष्ट AI for viral Indian content 🇮🇳
-        </p>
+    <main className="min-h-screen bg-black text-white p-6 pb-24">
+      {/* Greeting Section */}
+      <div className="mt-8 mb-12">
+        <h2 className="text-2xl font-medium text-gray-300">Hi {firstName}</h2>
+        <h1 className="text-4xl font-bold mt-2 text-white">Where should we start?</h1>
       </div>
 
+      {/* Main Action Chips Grid */}
+      <div className="grid grid-cols-2 gap-4 mb-12">
+        {mainActions.map((action) => (
+          <button
+            key={action.name}
+            onClick={() => action.href && router.push(action.href)}
+            className="flex items-center gap-3 bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800/50 py-4 px-5 rounded-3xl transition-all active:scale-95 text-left group"
+          >
+            <div className="shrink-0">
+              {action.icon}
+            </div>
+            <span className="font-medium text-gray-100 group-hover:text-white truncate">
+              {action.name}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Secondary Tools Section */}
       <div className="space-y-8">
-        {toolsByCategory.map((category) => (
+        {secondaryTools.map((category) => (
           <div key={category.category}>
-            <h2 className="flex items-center gap-2 text-xl font-semibold mb-4">
-              {category.icon}
-              {category.category}
-            </h2>
-            <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4 px-2">
+               <h3 className="text-lg font-semibold text-zinc-400">{category.category}</h3>
+            </div>
+            <div className="space-y-3">
               {category.tasks.map((task) => (
                 <Card
                   key={task.name}
-                  className="w-full max-w-2xl mx-auto rounded-xl shadow-md hover:shadow-lg transition-shadow cursor-pointer relative overflow-hidden group"
-                  onClick={() => handleTaskSelect(task)}
+                  className="bg-zinc-900/40 border-zinc-800 hover:bg-zinc-900/60 transition-colors cursor-pointer group rounded-2xl overflow-hidden"
+                  onClick={() => task.href && router.push(task.href)}
                 >
-                  {task.badge && (
-                    <div className="absolute top-2 right-2 bg-yellow-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 animate-pulse">
-                      {task.badge}
-                    </div>
-                  )}
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
+                      <div className="p-2 bg-zinc-800/50 rounded-xl group-hover:bg-primary/10 transition-colors">
                         {task.icon}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-lg">{task.name}</h3>
-                        <p className="text-sm text-muted-foreground">
+                        <h4 className="font-semibold text-white group-hover:text-primary transition-colors">
+                          {task.name}
+                        </h4>
+                        <p className="text-sm text-zinc-500">
                           {task.description}
                         </p>
                       </div>
                     </div>
-                    <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <ChevronRight className="h-5 w-5 text-zinc-600 group-hover:text-primary transition-colors" />
                   </CardContent>
                 </Card>
               ))}
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Footer Decoration */}
+      <div className="mt-16 text-center opacity-20 pointer-events-none">
+        <p className="text-xs uppercase tracking-[0.5em] font-light">Desi Content AI</p>
       </div>
     </main>
   );
