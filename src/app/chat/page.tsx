@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { type ChatMessage, type AnalysisOutput } from '@/ai/flows/chat-flow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, Paperclip, X, Zap, Bot, Check } from 'lucide-react';
+import { Loader2, Send, User, Sparkles, Copy, ThumbsUp, Paperclip, X, Zap, Bot, Check, Image as ImageIcon, Video, BarChart3 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -178,6 +178,15 @@ export default function SmartChatPage() {
     );
   }
 
+  const suggestions = [
+    { text: 'Image Generator idea', icon: <ImageIcon className="h-3.5 w-3.5 text-yellow-500" /> },
+    { text: 'Video Generator script', icon: <Video className="h-3.5 w-3.5 text-blue-500" /> },
+    { text: 'Analyze my content', icon: <BarChart3 className="h-3.5 w-3.5 text-purple-500" /> },
+    { text: 'Viral hook for reels?', icon: <Sparkles className="h-3.5 w-3.5 text-pink-500" /> },
+    { text: 'Trending hashtags?', icon: <Bot className="h-3.5 w-3.5 text-green-500" /> },
+    { text: 'Quick YouTube title', icon: <Zap className="h-3.5 w-3.5 text-orange-500" /> },
+  ];
+
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
       {/* Header */}
@@ -214,14 +223,15 @@ export default function SmartChatPage() {
                 <p className="text-muted-foreground mt-3 max-w-xs leading-relaxed">
                   Send a script for analysis, ask for video ideas, or just say hi. I'll detect what you need!
                 </p>
-                <div className="grid grid-cols-2 gap-3 mt-8 w-full">
-                    {['Viral hook for reels?', 'Optimize my script', 'Trending hashtags?', 'Quick YouTube title'].map((suggestion) => (
+                <div className="grid grid-cols-2 gap-3 mt-8 w-full max-w-lg">
+                    {suggestions.map((s) => (
                         <button 
-                            key={suggestion}
-                            onClick={() => form.setValue('message', suggestion)}
-                            className="text-xs p-3 bg-card border rounded-xl hover:bg-muted transition-colors text-left font-medium"
+                            key={s.text}
+                            onClick={() => form.setValue('message', s.text)}
+                            className="text-xs p-3 bg-card border rounded-xl hover:bg-muted transition-colors text-left font-medium flex items-center gap-2 group"
                         >
-                            {suggestion}
+                            <span className="shrink-0 group-hover:scale-110 transition-transform">{s.icon}</span>
+                            <span className="truncate">{s.text}</span>
                         </button>
                     ))}
                 </div>
