@@ -30,7 +30,7 @@ const ChatInputSchema = z.object({
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
 
-export const AnalysisOutputSchema = z.object({
+const AnalysisOutputSchema = z.object({
     viral_score: z.string().describe('The viral score from 0 to 100.'),
     status: z.string().describe('The viral potential status (e.g., Low ❌, Medium ⚠️, High 🚀, Very High 🔥).'),
     problems: z.array(z.string()).describe('A list of problems or weaknesses in the content.'),
@@ -100,7 +100,6 @@ const chatFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       system: systemPrompt,
       prompt: promptParts,
-      // History is removed to treat each message as a self-contained analysis.
       output: { schema: AnalysisOutputSchema },
       config: {
         temperature: 0.7,
@@ -109,7 +108,6 @@ const chatFlow = ai.defineFlow(
 
     const analysis = llmResponse.output;
     if (!analysis) {
-        // Fallback for when structured output fails
         throw new Error("Sorry, I couldn't analyze the content right now. Please try again.");
     }
     
