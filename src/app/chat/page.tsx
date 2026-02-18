@@ -46,10 +46,10 @@ function formatAnalysisToMarkdown(analysis: AnalysisOutput): string {
     markdown += `### 📊 Viral Analysis Summary\n---\n- **Viral Score:** \`${analysis.viral_score || 'N/A'}/100\`\n- **Status:** **${analysis.status || 'Ready to Post'}**\n\n#### 🚨 Critical Feedback\n${problems}\n\n#### 💡 Suggested Tweaks\n${improvements}\n`;
 
     if (opt) {
-        markdown += `\n#### ✨ Optimized Version\n> **Title:** ${opt.title || 'N/A'}\n> **Caption:** ${opt.caption || 'N/A'}\n> **Hashtags:** ${(opt.hashtags || []).join(' ')}\n> **CTA:** ${opt.cta || 'N/A'}\n`;
+        markdown += `\n#### ✨ Optimized Version (Guaranteed Viral)\n> **Title:** ${opt.title || 'N/A'}\n> **Caption:** ${opt.caption || 'N/A'}\n> **Hashtags:** ${(opt.hashtags || []).join(' ')}\n> **CTA:** ${opt.cta || 'N/A'}\n`;
         
         if (opt.script) {
-            markdown += `\n**Script / Hook Enhancement:**\n\`\`\`text\n${opt.script}\n\`\`\`\n`;
+            markdown += `\n**Viral Script Rewrite:**\n\`\`\`text\n${opt.script}\n\`\`\`\n`;
         }
     }
 
@@ -192,7 +192,7 @@ export default function SmartChatPage() {
     { text: 'Analyze videos and images', icon: <BarChart3 className="h-3.5 w-3.5 text-purple-500" /> },
     { text: 'Viral hook for reels?', icon: <Sparkles className="h-3.5 w-3.5 text-pink-500" /> },
     { text: 'Trending hashtags?', icon: <Bot className="h-3.5 w-3.5 text-green-500" /> },
-    { text: 'Quick YouTube title', icon: <Zap className="h-3.5 w-3.5 text-orange-500" /> },
+    { text: 'Viral Video Optimizer (titles/captions)', icon: <Zap className="h-3.5 w-3.5 text-orange-500" /> },
   ];
 
   return (
@@ -229,7 +229,7 @@ export default function SmartChatPage() {
                 </div>
                 <h2 className="text-2xl font-bold tracking-tight">How can I help you?</h2>
                 <p className="text-muted-foreground mt-3 max-w-xs leading-relaxed">
-                  Send a script for analysis, ask for video ideas, or just say hi. I'll detect what you need!
+                  Upload a video (even 20-30 min long) or share a script. I'll optimize it for maximum virality!
                 </p>
                 <div className="grid grid-cols-2 gap-3 mt-8 w-full max-w-lg">
                     {suggestions.map((s) => (

@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview AI flows for smart content assistance with automatic intent detection.
+ * @fileOverview AI flows for smart content assistance with automatic intent detection and viral optimization.
  */
 
 import { ai } from '@/ai/genkit';
@@ -28,13 +28,13 @@ const AnalysisOutputSchema = z.object({
     viral_score: z.string().optional().describe('The viral score from 0 to 100.'),
     status: z.string().optional().describe('The viral potential status (e.g., High Potential, Needs Work).'),
     problems: z.array(z.string()).optional().describe('Weaknesses in the content.'),
-    improvements: z.array(z.string()).optional().describe('Suggestions for improvement.'),
+    improvements: z.array(z.string()).optional().describe('Suggestions for improvement to ensure virality.'),
     optimized_content: z.object({
-        title: z.string().optional(),
-        caption: z.string().optional(),
+        title: z.string().optional().describe('A high-CTR, viral-ready title.'),
+        caption: z.string().optional().describe('An engaging caption with a hook.'),
         hashtags: z.array(z.string()).optional(),
-        script: z.string().optional(),
-        cta: z.string().optional(),
+        script: z.string().optional().describe('An optimized script or hook rewrite.'),
+        cta: z.string().optional().describe('A strong call to action.'),
     }).optional(),
     chat_response: z.string().optional().describe('Friendly, helpful, and detailed ChatGPT-style response if NOT a deep analysis or as a preamble.'),
 });
@@ -54,22 +54,25 @@ const smartChatFlow = ai.defineFlow(
     outputSchema: AnalysisOutputSchema,
   },
   async ({ messages }) => {
-    const systemPrompt = `You are a World-Class AI Content Assistant for Indian Creators, inspired by the conversational excellence of ChatGPT.
-    
-    INTENT DETECTION:
-    1. If the user provides a script, title, or video idea and asks for feedback, viral potential, or optimization:
+    const systemPrompt = `You are a World-Class Viral Content Strategist for Indian Creators. Your mission is to take any idea, script, or video and optimize it for maximum viral potential on YouTube, Reels, and Shorts.
+
+    INTENT DETECTION & STRATEGY:
+    1. DEEP VIRAL ANALYSIS: If the user provides content (text, image, or video) for review:
        - Set is_analysis = true.
-       - Provide a detailed viral analysis including score, problems, and improvements.
-       - Offer an optimized version of their content.
-    2. If the user asks a general question, wants to brainstorm, or is just chatting:
+       - Provide a brutal but constructive viral score (0-100).
+       - Identify why it might fail (problems) and exactly how to fix it (improvements).
+       - Generate "Guaranteed Viral" versions of the Title, Caption, and Script.
+       - Match the cultural context of India (trends, emotions, humor).
+
+    2. CHATGPT-STYLE ASSISTANCE: If the user is just brainstorming or chatting:
        - Set is_analysis = false.
-       - Provide a "ChatGPT-style" response: helpful, conversational, well-formatted, and insightful.
+       - Provide a "ChatGPT-style" response: helpful, conversational, and Insightful.
 
     GUIDELINES:
     - LANGUAGE: Always match the user's language (Hindi, Hinglish, or English).
-    - FORMATTING: Use Markdown for beautiful formatting (bold, lists, headers).
-    - PERSONALITY: Be encouraging, professional, and culturally relevant to India.
-    - MEDIA: If they upload an image/video, analyze its visual hook and aesthetic.`;
+    - FORMATTING: Use Markdown (bold, lists, headers).
+    - EXPERTISE: Focus on hooks, retention, and CTR (Click-Through Rate).
+    - LONG VIDEOS: If the user mentions a 20-30 min video, focus on finding the "Viral Core" segments.`;
 
     const lastMessage = messages[messages.length - 1];
     const promptParts: any[] = [{ text: lastMessage.content }];
