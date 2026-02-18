@@ -131,50 +131,39 @@ export default function ChatPage() {
       const customApiUrl = localStorage.getItem('customApiUrl');
       let analysisResult: AnalysisOutput;
 
-      if (customApiUrl) {
-        // Use the user-provided custom API
-        const response = await fetch(customApiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.uid,
-              mode: 'analyze', // Assuming mode is always analyze for now
-              content: userMessage.content,
-              // Note: The custom API example doesn't show media upload.
-              // This implementation will not send media to the custom API.
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Custom API request failed');
-        }
-
-        const result = await response.json();
-        if (!result.success || !result.data) {
-            throw new Error('Custom API returned an invalid response.');
-        }
-        analysisResult = result.data;
-
-      } else {
-        // Use the default built-in API
-        const response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: {
-            'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+      const response = await fetch(customApiUrl || '/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(customApiUrl ? {
+            userId: user.uid,
+            mode: 'analyze',
+            content: userMessage.content,
+          } : {
             messages: newMessages,
             topic: 'Content Viral Potential Analysis',
-            }),
-        });
+          })
+      });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'API request failed');
-        }
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('Non-JSON response received:', text);
+          throw new Error('The API returned an unexpected response format. Please check your API URL.');
+      }
 
-        analysisResult = await response.json();
+      const result = await response.json();
+
+      if (!response.ok) {
+          throw new Error(result.error || result.message || 'API request failed');
+      }
+
+      if (customApiUrl) {
+          if (!result.success || !result.data) {
+              throw new Error('Custom API returned an invalid data structure.');
+          }
+          analysisResult = result.data;
+      } else {
+          analysisResult = result;
       }
 
 
@@ -196,7 +185,7 @@ export default function ChatPage() {
       const errorMessage = error instanceof Error ? error.message : 'Sorry, something went wrong. Please try again.';
       setMessages((prev) => [
         ...prev,
-        { role: 'model', content: errorMessage },
+        { role: 'model', content: `**Error:** ${errorMessage}` },
       ]);
     } finally {
       setIsLoading(false);
@@ -282,7 +271,7 @@ export default function ChatPage() {
                         {message.content}
                     </ReactMarkdown>
                 </div>
-                {message.role === 'model' && (
+                {message.role === 'model' && !message.content.startsWith('**Error:**') && (
                   <div className="flex items-center gap-1 mt-2 text-muted-foreground">
                     <Button variant="ghost" size="icon" className='h-7 w-7' onClick={() => handleCopy(message.content)}>
                       <Copy className="h-4 w-4" />
