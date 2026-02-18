@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview AI flows for both deep content analysis and fast chatting.
+ * @fileOverview AI flows for smart content assistance with automatic intent detection.
  */
 
 import { ai } from '@/ai/genkit';
@@ -20,54 +20,49 @@ export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 const ChatInputSchema = z.object({
   messages: z.array(ChatMessageSchema),
-  topic: z.string().optional().describe('The topic for the content.'),
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
 const AnalysisOutputSchema = z.object({
-    viral_score: z.string().describe('The viral score from 0 to 100.'),
-    status: z.string().describe('The viral potential status (e.g., Low ❌, Medium ⚠️, High 🚀, Very High 🔥).'),
-    problems: z.array(z.string()).describe('A list of problems or weaknesses in the content.'),
-    improvements: z.array(z.string()).describe('A list of suggestions for improvement.'),
+    is_analysis: z.boolean().describe('True if the user is asking for content analysis or optimization.'),
+    viral_score: z.string().optional().describe('The viral score from 0 to 100.'),
+    status: z.string().optional().describe('The viral potential status.'),
+    problems: z.array(z.string()).optional().describe('Weaknesses in the content.'),
+    improvements: z.array(z.string()).optional().describe('Suggestions for improvement.'),
     optimized_content: z.object({
-        title: z.string().describe('An optimized, viral title.'),
-        caption: z.string().describe('An optimized, engaging caption.'),
-        hashtags: z.array(z.string()).describe('A list of relevant hashtags.'),
-        script: z.string().describe('A rewritten, short script (15-60 seconds).'),
-        cta: z.string().describe('A clear call-to-action.'),
-    }),
+        title: z.string().optional(),
+        caption: z.string().optional(),
+        hashtags: z.array(z.string()).optional(),
+        script: z.string().optional(),
+        cta: z.string().optional(),
+    }).optional(),
+    chat_response: z.string().optional().describe('Concise chat response if NOT a deep analysis.'),
 });
 export type AnalysisOutput = z.infer<typeof AnalysisOutputSchema>;
 
 /**
- * Performs a deep content analysis for viral potential.
+ * Smartly routes the user request to either deep analysis or fast chat.
  */
-export async function analyzeContent(input: ChatInput): Promise<AnalysisOutput> {
-  const result = await chatFlow(input);
-  if (!result) {
-    throw new Error("AI analysis failed to produce a result.");
-  }
-  return result;
+export async function smartChat(input: ChatInput): Promise<AnalysisOutput> {
+  return smartChatFlow(input);
 }
 
-/**
- * Provides a fast, direct answer to the user's message.
- */
-export async function fastChat(input: ChatInput): Promise<string> {
-  const result = await quickChatFlow(input);
-  return result;
-}
-
-const chatFlow = ai.defineFlow(
+const smartChatFlow = ai.defineFlow(
   {
-    name: 'chatFlow',
+    name: 'smartChatFlow',
     inputSchema: ChatInputSchema,
     outputSchema: AnalysisOutputSchema,
   },
   async ({ messages }) => {
-    const systemPrompt = `You are an Advanced AI Content Analyzer & Growth Assistant.
-    Analyze the user's content (text, image, or video) and provide a detailed viral potential report in JSON format.
-    Reply in the user's language (Hindi, Hinglish, or English).`;
+    const systemPrompt = `You are a Smart AI Content Assistant for Indian Creators.
+    
+    TASK:
+    1. Detect Intent: Is the user asking for content analysis, script optimization, viral potential, or thumbnail ideas? 
+       - If YES: Set is_analysis = true and fill out the analysis fields.
+       - If NO (e.g., "Hi", "Tell me a joke", "How are you?"): Set is_analysis = false and provide a friendly chat_response.
+
+    2. Language: Reply in the user's language (Hindi, Hinglish, or English).
+    3. Media: If an image or video is provided, prioritize analyzing its visual quality and hook potential.`;
 
     const lastMessage = messages[messages.length - 1];
     const promptParts: any[] = [{ text: lastMessage.content }];
@@ -82,31 +77,7 @@ const chatFlow = ai.defineFlow(
       config: { temperature: 0.7 },
     });
 
-    if (!llmResponse.output) throw new Error("Analysis failed.");
+    if (!llmResponse.output) throw new Error("AI failed to respond.");
     return llmResponse.output;
-  }
-);
-
-const quickChatFlow = ai.defineFlow(
-  {
-    name: 'quickChatFlow',
-    inputSchema: ChatInputSchema,
-    outputSchema: z.string(),
-  },
-  async ({ messages }) => {
-    const systemPrompt = `You are a helpful and extremely fast AI assistant for Indian content creators.
-    Reply concisely and directly in the user's language (Hindi, Hinglish, or English).
-    Avoid long explanations unless asked. Be friendly and motivating.`;
-
-    const llmResponse = await ai.generate({
-      system: systemPrompt,
-      prompt: messages.map(m => ({ 
-        role: m.role, 
-        content: m.media ? [{ text: m.content }, { media: { url: m.media.url } }] : [{ text: m.content }] 
-      })),
-      config: { temperature: 0.5 },
-    });
-
-    return llmResponse.text;
   }
 );
