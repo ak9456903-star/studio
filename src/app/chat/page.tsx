@@ -28,6 +28,30 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const CustomLogo = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 100 100"
+      className="h-5 w-5"
+    >
+      <defs>
+        <linearGradient id="glow-header" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="hsl(var(--primary))" />
+          <stop offset="100%" stopColor="hsl(var(--accent))" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M 50,10 L 80,30 L 80,70 L 50,90 L 20,70 L 20,30 Z"
+        stroke="url(#glow-header)"
+        strokeWidth="6"
+        fill="none"
+      />
+      <rect x="35" y="40" width="10" height="4" rx="1" fill="currentColor" className="text-primary" />
+      <rect x="55" y="40" width="10" height="4" rx="1" fill="currentColor" className="text-primary" />
+      <path d="M 40 65 L 60 65" stroke="currentColor" strokeWidth="4" strokeLinecap="round" className="text-primary" />
+    </svg>
+);
+
 function formatAnalysisToMarkdown(analysis: AnalysisOutput): string {
     if (!analysis.is_analysis) return analysis.chat_response || '';
 
@@ -213,7 +237,7 @@ export default function SmartChatPage() {
       <header className="flex items-center justify-between p-4 border-b bg-card/40 backdrop-blur-md sticky top-0 z-30">
         <div className="flex items-center gap-2.5">
           <div className="p-2 bg-primary/15 rounded-xl">
-            <Bot className="h-5 w-5 text-primary" />
+            <CustomLogo />
           </div>
           <div>
             <h1 className="text-sm font-bold leading-none">Smart Assistant</h1>
