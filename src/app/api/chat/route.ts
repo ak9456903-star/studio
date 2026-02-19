@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { smartChat, type ChatInput } from '@/ai/flows/chat-flow';
 
+export const maxDuration = 120; // 2 minutes timeout for media analysis
+
 export async function POST(request: Request) {
   try {
     const body: ChatInput = await request.json();
