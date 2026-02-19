@@ -17,49 +17,33 @@ export default function Icon() {
           justifyContent: 'center',
           width: '100%',
           height: '100%',
-          borderRadius: '50%',
-          background: '#f0f0f0',
+          background: '#020617',
+          borderRadius: '8px',
+          border: '1px solid #00d4ff',
         }}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 100 100"
-          width="80"
-          height="80"
+          width="24"
+          height="24"
         >
           <defs>
-            <linearGradient id="face-gradient" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#f472b6" />
-              <stop offset="100%" stopColor="#a78bfa" />
-            </linearGradient>
-            <linearGradient id="headphone-gradient" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#374151" />
-              <stop offset="100%" stopColor="#111827" />
+            <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#00d4ff" />
+              <stop offset="100%" stopColor="#0055ff" />
             </linearGradient>
           </defs>
-          {/* Headphones */}
+          {/* Futuristic Tech Mask / Hood Icon */}
           <path
-            d="M 25,45 A 25,25 0 0 1 75,45"
-            stroke="url(#headphone-gradient)"
-            strokeWidth="10"
+            d="M 50,10 L 80,30 L 80,70 L 50,90 L 20,70 L 20,30 Z"
+            stroke="url(#glow)"
+            strokeWidth="4"
             fill="none"
-            strokeLinecap="round"
           />
-          <rect x="15" y="40" width="12" height="25" rx="6" fill="url(#headphone-gradient)" />
-          <rect x="73" y="40" width="12" height="25" rx="6" fill="url(#headphone-gradient)" />
-
-          {/* Face */}
-          <rect x="25" y="25" width="50" height="50" rx="10" fill="url(#face-gradient)" />
-          
-          {/* Eyes */}
-          <circle cx="42" cy="45" r="5" fill="white" />
-          <circle cx="58" cy="45" r="5" fill="white" />
-          <circle cx="42" cy="45" r="2" fill="black" />
-          <circle cx="58" cy="45" r="2" fill="black" />
-
-          {/* Smile */}
-          <path d="M 40 60 Q 50 70 60 60" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round"/>
-
+          <rect x="35" y="40" width="10" height="4" rx="1" fill="#00d4ff" />
+          <rect x="55" y="40" width="10" height="4" rx="1" fill="#00d4ff" />
+          <path d="M 40 65 L 60 65" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </div>
     ),
