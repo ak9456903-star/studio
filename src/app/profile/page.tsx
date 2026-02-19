@@ -26,6 +26,10 @@ const CUSTOM_API_URL_KEY = 'customApiUrl';
 const ADMOB_CLIENT_ID_KEY = 'adMobClientId';
 const ADMOB_UNIT_ID_KEY = 'adMobUnitId';
 
+// User's provided ID
+const DEFAULT_CLIENT_ID = 'ca-pub-6437039380428423';
+const DEFAULT_UNIT_ID = '2652653143';
+
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -36,8 +40,8 @@ export default function ProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       apiUrl: '',
-      adMobClientId: '',
-      adUnitId: '',
+      adMobClientId: DEFAULT_CLIENT_ID,
+      adUnitId: DEFAULT_UNIT_ID,
     },
   });
 
@@ -48,10 +52,14 @@ export default function ProfilePage() {
   }, [user, isUserLoading, router]);
 
   useEffect(() => {
-    // Load saved settings from localStorage
-    form.setValue('apiUrl', localStorage.getItem(CUSTOM_API_URL_KEY) || '');
-    form.setValue('adMobClientId', localStorage.getItem(ADMOB_CLIENT_ID_KEY) || '');
-    form.setValue('adUnitId', localStorage.getItem(ADMOB_UNIT_ID_KEY) || '');
+    // Load saved settings from localStorage or fallback to defaults
+    const savedApi = localStorage.getItem(CUSTOM_API_URL_KEY);
+    const savedClient = localStorage.getItem(ADMOB_CLIENT_ID_KEY);
+    const savedUnit = localStorage.getItem(ADMOB_UNIT_ID_KEY);
+
+    if (savedApi) form.setValue('apiUrl', savedApi);
+    form.setValue('adMobClientId', savedClient || DEFAULT_CLIENT_ID);
+    form.setValue('adUnitId', savedUnit || DEFAULT_UNIT_ID);
   }, [form]);
 
   const onSubmit = async (data: FormValues) => {
