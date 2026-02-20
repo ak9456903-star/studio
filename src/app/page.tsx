@@ -120,17 +120,6 @@ export default function CreatePage() {
         <h1 className="text-4xl font-bold mt-2 text-white">Where should we start?</h1>
       </div>
 
-      {/* Ad Placement (Open App Ad) */}
-      <div className="mb-10 p-4 bg-zinc-900/40 border border-zinc-800 rounded-3xl text-center relative overflow-hidden group">
-        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-        <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-2 font-bold relative z-10">Advertisement</p>
-        <div className="h-24 flex flex-col items-center justify-center text-zinc-500 italic text-xs gap-1 relative z-10">
-          <Zap className="h-4 w-4 text-zinc-700 mb-1" />
-          <span>Ads by Google</span>
-          <span className="text-[8px] opacity-40">Unit: 2652653143</span>
-        </div>
-      </div>
-
       {/* Rewarded Ad Section */}
       <Card className="mb-10 bg-gradient-to-br from-primary/20 via-background to-accent/20 border-primary/30 rounded-3xl overflow-hidden shadow-2xl">
         <CardContent className="p-6 flex items-center justify-between gap-4">
