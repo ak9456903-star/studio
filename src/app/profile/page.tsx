@@ -10,28 +10,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, DollarSign, Settings2, Globe } from 'lucide-react';
+import { Loader2, Settings2, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const profileSchema = z.object({
   apiUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
-  adMobClientId: z.string().min(1, "Client ID is required for ads").optional().or(z.literal('')),
-  adUnitId: z.string().min(1, "Ad Unit ID is required").optional().or(z.literal('')),
-  rewardAdUnitId: z.string().min(1, "Reward Ad Unit ID is required").optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof profileSchema>;
 
 const CUSTOM_API_URL_KEY = 'customApiUrl';
-const ADMOB_CLIENT_ID_KEY = 'adMobClientId';
-const ADMOB_UNIT_ID_KEY = 'adMobUnitId';
-const REWARD_AD_UNIT_ID_KEY = 'rewardAdUnitId';
-
-// User's provided IDs
-const DEFAULT_CLIENT_ID = 'ca-app-pub-6437039380428423';
-const DEFAULT_UNIT_ID = '2652653143';
-const DEFAULT_REWARD_ID = '6912306240';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -43,9 +31,6 @@ export default function ProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       apiUrl: '',
-      adMobClientId: DEFAULT_CLIENT_ID,
-      adUnitId: DEFAULT_UNIT_ID,
-      rewardAdUnitId: DEFAULT_REWARD_ID,
     },
   });
 
@@ -57,14 +42,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const savedApi = localStorage.getItem(CUSTOM_API_URL_KEY);
-    const savedClient = localStorage.getItem(ADMOB_CLIENT_ID_KEY);
-    const savedUnit = localStorage.getItem(ADMOB_UNIT_ID_KEY);
-    const savedReward = localStorage.getItem(REWARD_AD_UNIT_ID_KEY);
-
     if (savedApi) form.setValue('apiUrl', savedApi);
-    form.setValue('adMobClientId', savedClient || DEFAULT_CLIENT_ID);
-    form.setValue('adUnitId', savedUnit || DEFAULT_UNIT_ID);
-    form.setValue('rewardAdUnitId', savedReward || DEFAULT_REWARD_ID);
   }, [form]);
 
   const onSubmit = async (data: FormValues) => {
@@ -72,15 +50,6 @@ export default function ProfilePage() {
     try {
       if (data.apiUrl) localStorage.setItem(CUSTOM_API_URL_KEY, data.apiUrl);
       else localStorage.removeItem(CUSTOM_API_URL_KEY);
-
-      if (data.adMobClientId) localStorage.setItem(ADMOB_CLIENT_ID_KEY, data.adMobClientId);
-      else localStorage.removeItem(ADMOB_CLIENT_ID_KEY);
-
-      if (data.adUnitId) localStorage.setItem(ADMOB_UNIT_ID_KEY, data.adUnitId);
-      else localStorage.removeItem(ADMOB_UNIT_ID_KEY);
-
-      if (data.rewardAdUnitId) localStorage.setItem(REWARD_AD_UNIT_ID_KEY, data.rewardAdUnitId);
-      else localStorage.removeItem(REWARD_AD_UNIT_ID_KEY);
 
       toast({
         title: "Settings Saved",
@@ -113,118 +82,42 @@ export default function ProfilePage() {
           Profile & Settings
         </h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Manage your AI and Monetization configurations 🛠️
+          Manage your AI and account configurations 🛠️
         </p>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="general" className="flex items-center gap-2">
-                <Globe className="h-4 w-4" />
-                AI Configuration
-              </TabsTrigger>
-              <TabsTrigger value="monetization" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Monetization
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="general">
-              <Card className="rounded-2xl border-primary/20 bg-card/50 backdrop-blur-sm overflow-hidden">
-                <CardHeader>
-                  <CardTitle className="text-xl">Custom AI Endpoint</CardTitle>
-                  <CardDescription>
-                    Provide your own API endpoint for custom analysis or scripts.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="apiUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Endpoint URL</FormLabel>
-                        <FormControl>
-                          <Input
-                            className="bg-background/50 border-primary/10 focus:border-primary"
-                            placeholder="https://your-api.com/analyze"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="monetization">
-              <Card className="rounded-2xl border-accent/20 bg-card/50 backdrop-blur-sm overflow-hidden">
-                <CardHeader>
-                  <CardTitle className="text-xl text-accent">AdMob / AdSense Integration</CardTitle>
-                  <CardDescription>
-                    Configure your monetization IDs to start earning.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="adMobClientId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client ID (ca-app-pub-xxxxxxxx)</FormLabel>
-                        <FormControl>
-                          <Input
-                            className="bg-background/50 border-accent/10 focus:border-accent"
-                            placeholder="ca-app-pub-0000000000000000"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="adUnitId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Standard Ad Unit ID</FormLabel>
-                        <FormControl>
-                          <Input
-                            className="bg-background/50 border-accent/10 focus:border-accent"
-                            placeholder="2652653143"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="rewardAdUnitId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rewarded Ad Unit ID</FormLabel>
-                        <FormControl>
-                          <Input
-                            className="bg-background/50 border-accent/10 focus:border-accent"
-                            placeholder="6912306240"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          <Card className="rounded-2xl border-primary/20 bg-card/50 backdrop-blur-sm overflow-hidden">
+            <CardHeader>
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="h-5 w-5 text-primary" />
+                <CardTitle className="text-xl">AI Configuration</CardTitle>
+              </div>
+              <CardDescription>
+                Provide your own API endpoint for custom analysis or scripts.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="apiUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Endpoint URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="bg-background/50 border-primary/10 focus:border-primary"
+                        placeholder="https://your-api.com/analyze"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
 
           <Button
             type="submit"
