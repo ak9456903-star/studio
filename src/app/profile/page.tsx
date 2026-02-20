@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, DollarSign, Settings2, Globe, Gift } from 'lucide-react';
+import { Loader2, DollarSign, Settings2, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -29,7 +29,7 @@ const ADMOB_UNIT_ID_KEY = 'adMobUnitId';
 const REWARD_AD_UNIT_ID_KEY = 'rewardAdUnitId';
 
 // User's provided IDs
-const DEFAULT_CLIENT_ID = 'ca-pub-6437039380428423';
+const DEFAULT_CLIENT_ID = 'ca-app-pub-6437039380428423';
 const DEFAULT_UNIT_ID = '2652653143';
 const DEFAULT_REWARD_ID = '6912306240';
 
@@ -56,7 +56,6 @@ export default function ProfilePage() {
   }, [user, isUserLoading, router]);
 
   useEffect(() => {
-    // Load saved settings from localStorage or fallback to defaults
     const savedApi = localStorage.getItem(CUSTOM_API_URL_KEY);
     const savedClient = localStorage.getItem(ADMOB_CLIENT_ID_KEY);
     const savedUnit = localStorage.getItem(ADMOB_UNIT_ID_KEY);
@@ -167,7 +166,7 @@ export default function ProfilePage() {
                 <CardHeader>
                   <CardTitle className="text-xl text-accent">AdMob / AdSense Integration</CardTitle>
                   <CardDescription>
-                    Configure your monetization IDs to start earning from your content hub.
+                    Configure your monetization IDs to start earning.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -176,11 +175,11 @@ export default function ProfilePage() {
                     name="adMobClientId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Client ID (e.g., ca-pub-xxxxxxxx)</FormLabel>
+                        <FormLabel>Client ID (ca-app-pub-xxxxxxxx)</FormLabel>
                         <FormControl>
                           <Input
                             className="bg-background/50 border-accent/10 focus:border-accent"
-                            placeholder="ca-pub-0000000000000000"
+                            placeholder="ca-app-pub-0000000000000000"
                             {...field}
                           />
                         </FormControl>
@@ -197,7 +196,7 @@ export default function ProfilePage() {
                         <FormControl>
                           <Input
                             className="bg-background/50 border-accent/10 focus:border-accent"
-                            placeholder="1234567890"
+                            placeholder="2652653143"
                             {...field}
                           />
                         </FormControl>
