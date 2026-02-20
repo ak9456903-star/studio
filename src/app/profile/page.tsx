@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, DollarSign, Settings2, Globe } from 'lucide-react';
+import { Loader2, DollarSign, Settings2, Globe, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -18,6 +18,7 @@ const profileSchema = z.object({
   apiUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
   adMobClientId: z.string().min(1, "Client ID is required for ads").optional().or(z.literal('')),
   adUnitId: z.string().min(1, "Ad Unit ID is required").optional().or(z.literal('')),
+  rewardAdUnitId: z.string().min(1, "Reward Ad Unit ID is required").optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof profileSchema>;
@@ -25,10 +26,12 @@ type FormValues = z.infer<typeof profileSchema>;
 const CUSTOM_API_URL_KEY = 'customApiUrl';
 const ADMOB_CLIENT_ID_KEY = 'adMobClientId';
 const ADMOB_UNIT_ID_KEY = 'adMobUnitId';
+const REWARD_AD_UNIT_ID_KEY = 'rewardAdUnitId';
 
 // User's provided IDs
 const DEFAULT_CLIENT_ID = 'ca-pub-6437039380428423';
 const DEFAULT_UNIT_ID = '2652653143';
+const DEFAULT_REWARD_ID = '6912306240';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -42,6 +45,7 @@ export default function ProfilePage() {
       apiUrl: '',
       adMobClientId: DEFAULT_CLIENT_ID,
       adUnitId: DEFAULT_UNIT_ID,
+      rewardAdUnitId: DEFAULT_REWARD_ID,
     },
   });
 
@@ -56,10 +60,12 @@ export default function ProfilePage() {
     const savedApi = localStorage.getItem(CUSTOM_API_URL_KEY);
     const savedClient = localStorage.getItem(ADMOB_CLIENT_ID_KEY);
     const savedUnit = localStorage.getItem(ADMOB_UNIT_ID_KEY);
+    const savedReward = localStorage.getItem(REWARD_AD_UNIT_ID_KEY);
 
     if (savedApi) form.setValue('apiUrl', savedApi);
     form.setValue('adMobClientId', savedClient || DEFAULT_CLIENT_ID);
     form.setValue('adUnitId', savedUnit || DEFAULT_UNIT_ID);
+    form.setValue('rewardAdUnitId', savedReward || DEFAULT_REWARD_ID);
   }, [form]);
 
   const onSubmit = async (data: FormValues) => {
@@ -73,6 +79,9 @@ export default function ProfilePage() {
 
       if (data.adUnitId) localStorage.setItem(ADMOB_UNIT_ID_KEY, data.adUnitId);
       else localStorage.removeItem(ADMOB_UNIT_ID_KEY);
+
+      if (data.rewardAdUnitId) localStorage.setItem(REWARD_AD_UNIT_ID_KEY, data.rewardAdUnitId);
+      else localStorage.removeItem(REWARD_AD_UNIT_ID_KEY);
 
       toast({
         title: "Settings Saved",
@@ -184,11 +193,28 @@ export default function ProfilePage() {
                     name="adUnitId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Ad Unit ID</FormLabel>
+                        <FormLabel>Standard Ad Unit ID</FormLabel>
                         <FormControl>
                           <Input
                             className="bg-background/50 border-accent/10 focus:border-accent"
                             placeholder="1234567890"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="rewardAdUnitId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Rewarded Ad Unit ID</FormLabel>
+                        <FormControl>
+                          <Input
+                            className="bg-background/50 border-accent/10 focus:border-accent"
+                            placeholder="6912306240"
                             {...field}
                           />
                         </FormControl>

@@ -10,25 +10,17 @@ import {
   Sparkles, 
   Video, 
   Zap, 
-  Search, 
   ChevronRight,
   Instagram,
   Clapperboard,
   Hash,
   Quote,
   Image as ImageIcon,
-  Youtube
+  Youtube,
+  Gift,
+  Coins
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-type Task = {
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  href?: string;
-  badge?: string;
-  color?: string;
-};
+import { useToast } from '@/hooks/use-toast';
 
 const mainActions = [
   {
@@ -89,12 +81,26 @@ const secondaryTools = [
 export default function CreatePage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
+  const [isAdLoading, setIsAdLoading] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
+
+  const handleWatchAd = () => {
+    setIsAdLoading(true);
+    // Simulate Ad Loading and Reward
+    setTimeout(() => {
+      setIsAdLoading(false);
+      toast({
+        title: "Reward Claimed! 🎁",
+        description: "You've earned 10 Viral Credits for premium analysis.",
+      });
+    }, 2500);
+  };
 
   if (isUserLoading || !user) {
     return (
@@ -115,14 +121,45 @@ export default function CreatePage() {
       </div>
 
       {/* Ad Placement (Open App Ad) */}
-      <div className="mb-10 p-4 bg-zinc-900/40 border border-zinc-800 rounded-3xl text-center">
-        <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-2 font-bold">Advertisement</p>
-        <div className="h-24 flex flex-col items-center justify-center text-zinc-500 italic text-xs gap-1">
+      <div className="mb-10 p-4 bg-zinc-900/40 border border-zinc-800 rounded-3xl text-center relative overflow-hidden group">
+        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-2 font-bold relative z-10">Advertisement</p>
+        <div className="h-24 flex flex-col items-center justify-center text-zinc-500 italic text-xs gap-1 relative z-10">
           <Zap className="h-4 w-4 text-zinc-700 mb-1" />
           <span>Ads by Google</span>
           <span className="text-[8px] opacity-40">Unit: 2652653143</span>
         </div>
       </div>
+
+      {/* Rewarded Ad Section */}
+      <Card className="mb-10 bg-gradient-to-br from-primary/20 via-background to-accent/20 border-primary/30 rounded-3xl overflow-hidden shadow-2xl">
+        <CardContent className="p-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/20 rounded-2xl animate-pulse">
+              <Gift className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                Watch & Earn
+                <span className="flex items-center gap-1 text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                  <Coins className="h-3 w-3" />
+                  +10 Credits
+                </span>
+              </h3>
+              <p className="text-xs text-zinc-400 mt-1">
+                Watch a quick ad to unlock Premium Viral Analysis.
+              </p>
+            </div>
+          </div>
+          <Button 
+            onClick={handleWatchAd} 
+            disabled={isAdLoading}
+            className="rounded-2xl px-6 font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all"
+          >
+            {isAdLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Watch Now'}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Main Action Chips Grid */}
       <div className="grid grid-cols-2 gap-4 mb-12">
