@@ -26,7 +26,7 @@ const CUSTOM_API_URL_KEY = 'customApiUrl';
 const ADMOB_CLIENT_ID_KEY = 'adMobClientId';
 const ADMOB_UNIT_ID_KEY = 'adMobUnitId';
 
-// User's provided ID
+// User's provided IDs
 const DEFAULT_CLIENT_ID = 'ca-pub-6437039380428423';
 const DEFAULT_UNIT_ID = '2652653143';
 

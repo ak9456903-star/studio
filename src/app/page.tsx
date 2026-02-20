@@ -109,9 +109,19 @@ export default function CreatePage() {
   return (
     <main className="min-h-screen bg-black text-white p-6 pb-24">
       {/* Greeting Section */}
-      <div className="mt-8 mb-12">
+      <div className="mt-8 mb-8">
         <h2 className="text-2xl font-medium text-gray-300">Hi {firstName}</h2>
         <h1 className="text-4xl font-bold mt-2 text-white">Where should we start?</h1>
+      </div>
+
+      {/* Ad Placement (Open App Ad) */}
+      <div className="mb-10 p-4 bg-zinc-900/40 border border-zinc-800 rounded-3xl text-center">
+        <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-2 font-bold">Advertisement</p>
+        <div className="h-24 flex flex-col items-center justify-center text-zinc-500 italic text-xs gap-1">
+          <Zap className="h-4 w-4 text-zinc-700 mb-1" />
+          <span>Ads by Google</span>
+          <span className="text-[8px] opacity-40">Unit: 2652653143</span>
+        </div>
       </div>
 
       {/* Main Action Chips Grid */}
