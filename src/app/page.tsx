@@ -113,7 +113,7 @@ export default function CreatePage() {
   const firstName = user.displayName?.split(' ')[0] || 'Creator';
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 pb-24">
+    <main className="min-h-screen text-white p-6 pb-24 relative z-10">
       {/* Greeting Section */}
       <div className="mt-8 mb-8">
         <h2 className="text-2xl font-medium text-gray-300">Hi {firstName}</h2>
@@ -121,7 +121,7 @@ export default function CreatePage() {
       </div>
 
       {/* Rewarded Ad Section */}
-      <Card className="mb-10 bg-gradient-to-br from-primary/20 via-background to-accent/20 border-primary/30 rounded-3xl overflow-hidden shadow-2xl">
+      <Card className="mb-10 bg-gradient-to-br from-primary/20 via-background to-accent/20 border-primary/30 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-md">
         <CardContent className="p-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary/20 rounded-2xl animate-pulse">
@@ -156,12 +156,12 @@ export default function CreatePage() {
           <button
             key={action.name}
             onClick={() => action.href && router.push(action.href)}
-            className="flex items-center gap-3 bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800/50 py-4 px-5 rounded-3xl transition-all active:scale-95 text-left group"
+            className="flex items-center gap-3 bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800/50 py-4 px-5 rounded-3xl transition-all active:scale-95 text-left group backdrop-blur-sm"
           >
             <div className="shrink-0">
               {action.icon}
             </div>
-            <span className="font-medium text-gray-100 group-hover:text-white truncate">
+            <span className="font-medium text-gray-100 group-hover:text-white truncate text-sm">
               {action.name}
             </span>
           </button>
@@ -179,7 +179,7 @@ export default function CreatePage() {
               {category.tasks.map((task) => (
                 <Card
                   key={task.name}
-                  className="bg-zinc-900/40 border-zinc-800 hover:bg-zinc-900/60 transition-colors cursor-pointer group rounded-2xl overflow-hidden"
+                  className="bg-zinc-900/40 border-zinc-800 hover:bg-zinc-900/60 transition-colors cursor-pointer group rounded-2xl overflow-hidden backdrop-blur-sm"
                   onClick={() => task.href && router.push(task.href)}
                 >
                   <CardContent className="p-4 flex items-center justify-between">
@@ -206,7 +206,7 @@ export default function CreatePage() {
       </div>
 
       {/* Footer Decoration */}
-      <div className="mt-16 text-center opacity-20 pointer-events-none">
+      <div className="mt-16 text-center opacity-20 pointer-events-none pb-8">
         <p className="text-xs uppercase tracking-[0.5em] font-light">Desi Content AI</p>
       </div>
     </main>
