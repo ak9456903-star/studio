@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import Script from 'next/script';
+import NextImage from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export const metadata: Metadata = {
   title: 'Desi Content Creator',
@@ -15,8 +17,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const bgImage = PlaceHolderImages.find(img => img.id === 'cyber-background');
+
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -29,9 +33,25 @@ export default function RootLayout({
           strategy="lazyOnload"
         />
       </head>
-      <body className="font-body antialiased">
+      <body className="font-body antialiased relative min-h-screen">
         <FirebaseClientProvider>
-          <div className="relative min-h-screen pb-16">
+          {/* Global Background Image */}
+          {bgImage && (
+            <div className="fixed inset-0 z-[-2] pointer-events-none">
+              <NextImage
+                src={bgImage.imageUrl}
+                alt="Background"
+                fill
+                className="object-cover opacity-30"
+                priority
+                data-ai-hint={bgImage.imageHint}
+              />
+              {/* Dark Gradient Overlay for Readability */}
+              <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
+            </div>
+          )}
+
+          <div className="relative z-0 min-h-screen pb-16">
             {children}
           </div>
           <BottomNav />

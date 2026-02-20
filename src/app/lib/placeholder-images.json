@@ -1,0 +1,10 @@
+{
+  "placeholderImages": [
+    {
+      "id": "cyber-background",
+      "description": "Cyberpunk hacker background with lightning and tech mask",
+      "imageUrl": "https://picsum.photos/seed/cyber-tech-99/1920/1080",
+      "imageHint": "cyberpunk hacker lightning"
+    }
+  ]
+}
