@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -20,9 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   useAuth, 
   useUser, 
-  initiateEmailSignIn, 
-  initiateEmailSignUp, 
 } from '@/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -66,24 +66,41 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       if (action === 'signIn') {
-        initiateEmailSignIn(auth, data.email, data.password);
+        await signInWithEmailAndPassword(auth, data.email, data.password);
       } else if (action === 'signUp') {
-        initiateEmailSignUp(auth, data.email, data.password);
+        await createUserWithEmailAndPassword(auth, data.email, data.password);
       }
     } catch (error: any) {
       console.error(`${action} failed`, error);
+      
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      
+      // Map Firebase Auth error codes to user-friendly messages
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already registered. Please sign in instead.";
+      } else if (error.code === 'auth/invalid-credential') {
+        errorMessage = "Invalid email or password. Please check your details.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password is too weak. Please use at least 6 characters.";
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = "No account found with this email.";
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = "Incorrect password.";
+      }
+
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
-        description: error.message || `Could not ${action}. Please try again.`,
+        description: errorMessage,
       });
+    } finally {
       setIsLoading(false);
     }
   };
 
   if (isUserLoading || user) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -113,7 +130,7 @@ export default function LoginPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password-signin">Password</Label>
-                  <Input id="password-signin" type="password" className="rounded-xl" {...signInForm.register('password')} />
+                  <Input id="password-signin" type="password" placeholder="••••••••" className="rounded-xl" {...signInForm.register('password')} />
                    {signInForm.formState.errors.password && <p className="text-xs text-destructive">{signInForm.formState.errors.password.message}</p>}
                 </div>
               </CardContent>
@@ -143,7 +160,7 @@ export default function LoginPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password-signup">Password</Label>
-                  <Input id="password-signup" type="password" className="rounded-xl" {...signUpForm.register('password')} />
+                  <Input id="password-signup" type="password" placeholder="••••••••" className="rounded-xl" {...signUpForm.register('password')} />
                   {signUpForm.formState.errors.password && <p className="text-xs text-destructive">{signUpForm.formState.errors.password.message}</p>}
                 </div>
               </CardContent>
