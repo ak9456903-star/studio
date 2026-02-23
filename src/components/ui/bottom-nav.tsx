@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Home, MessageCircle, User } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -15,9 +17,19 @@ const navItems = [
 export function BottomNav() {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
+  const [mounted, setMounted] = useState(false);
 
-  // Don't show nav if we are sure the user is not logged in
-  if (!user && !isUserLoading) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Avoid hydration mismatch by waiting for mount
+  if (!mounted || isUserLoading) {
+    return null;
+  }
+
+  // Only show nav if user is logged in
+  if (!user) {
     return null;
   }
 

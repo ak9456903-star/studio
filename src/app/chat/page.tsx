@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, ElementRef } from 'react';
@@ -19,7 +20,7 @@ import NextImage from 'next/image';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
-const MAX_FILE_SIZE_MB = 500;
+const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const formSchema = z.object({
@@ -160,21 +161,24 @@ export default function SmartChatPage() {
           body: JSON.stringify({ messages: newMessages })
       });
 
+      const contentType = response.headers.get('content-type');
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error Response:', errorText);
-        throw new Error('API Error: Could not get response from AI.');
+        const errorText = contentType?.includes('application/json') 
+          ? (await response.json()).error 
+          : 'Server communication error. Please try again.';
+        throw new Error(errorText);
       }
 
-      const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('Non-JSON response received:', text);
-          throw new Error('The AI returned an unexpected response format. Please try again.');
+          throw new Error('Unexpected response format from server.');
       }
 
       const result = await response.json();
       const analysis: AnalysisOutput = result.answer; 
+
+      if (!analysis) {
+        throw new Error('AI could not generate a response. Please refine your prompt.');
+      }
 
       const aiResponseContent = formatAnalysisToMarkdown(analysis);
       
@@ -192,8 +196,8 @@ export default function SmartChatPage() {
     } catch (error: any) {
       toast({ 
         variant: 'destructive', 
-        title: 'Oops!', 
-        description: error.message || 'I had a small hiccup. Can you try again?' 
+        title: 'Communication Error', 
+        description: error.message || 'The AI assistant is temporarily unavailable. Please check your connection.' 
       });
     } finally {
       setIsLoading(false);
@@ -224,11 +228,11 @@ export default function SmartChatPage() {
 
   const suggestions = [
     { text: 'Create a landscape image', icon: <ImageIcon className="h-3.5 w-3.5 text-yellow-500" /> },
-    { text: 'AI API call video generator', icon: <Video className="h-3.5 w-3.5 text-blue-500" /> },
-    { text: 'Analyze videos and images', icon: <BarChart3 className="h-3.5 w-3.5 text-purple-500" /> },
+    { text: 'Generate a short 5s video', icon: <Video className="h-3.5 w-3.5 text-blue-500" /> },
+    { text: 'Analyze this script for virality', icon: <BarChart3 className="h-3.5 w-3.5 text-purple-500" /> },
     { text: 'Viral hook for reels?', icon: <Sparkles className="h-3.5 w-3.5 text-pink-500" /> },
-    { text: 'Trending hashtags?', icon: <Bot className="h-3.5 w-3.5 text-green-500" /> },
-    { text: 'Viral Video Optimizer (titles/captions)', icon: <Zap className="h-3.5 w-3.5 text-orange-500" /> },
+    { text: 'Trending hashtags for tech?', icon: <Bot className="h-3.5 w-3.5 text-green-500" /> },
+    { text: 'Optimize YouTube Title', icon: <Zap className="h-3.5 w-3.5 text-orange-500" /> },
   ];
 
   return (
@@ -276,7 +280,7 @@ export default function SmartChatPage() {
                 </div>
                 <h2 className="text-2xl font-bold tracking-tight">नमस्ते! मैं आपकी कैसे मदद कर सकता हूँ?</h2>
                 <p className="text-muted-foreground mt-3 max-w-xs leading-relaxed">
-                  Upload a video (even 20-30 min long) or share a script. I'll optimize it for maximum virality!
+                  Upload a script or describe your content. I&apos;ll optimize it for maximum virality!
                 </p>
                 <div className="grid grid-cols-2 gap-3 mt-8 w-full max-w-lg">
                     {suggestions.map((s) => (
@@ -404,7 +408,7 @@ export default function SmartChatPage() {
                         <input type="file" accept="image/*,video/*" ref={mediaInputRef} className="hidden" onChange={handleFileChange} />
                         
                         <Input 
-                            placeholder="Message AI Assistant..." 
+                            placeholder="Ask AI for scripts, captions or ideas..." 
                             autoComplete="off" 
                             className="h-11 border-none bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm px-2" 
                             {...field} 
