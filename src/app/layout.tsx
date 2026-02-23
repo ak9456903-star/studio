@@ -1,8 +1,10 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { SplashScreen } from '@/components/SplashScreen';
 import Script from 'next/script';
 import NextImage from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -25,7 +27,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        {/* Updated AdMob Script with User provided Client ID */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-app-pub-6437039380428423"
@@ -35,6 +36,8 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased relative min-h-screen">
         <FirebaseClientProvider>
+          <SplashScreen />
+          
           {/* Global Background Image */}
           {bgImage && (
             <div className="fixed inset-0 z-[-2] pointer-events-none">
@@ -46,7 +49,6 @@ export default function RootLayout({
                 priority
                 data-ai-hint={bgImage.imageHint}
               />
-              {/* Dark Gradient Overlay for Readability */}
               <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90" />
             </div>
           )}
