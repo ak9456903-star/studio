@@ -13,35 +13,45 @@ const navItems = [
 ];
 
 export function BottomNav() {
-    const pathname = usePathname();
-    const { user, isUserLoading } = useUser();
+  const pathname = usePathname();
+  const { user, isUserLoading } = useUser();
 
-    if (!user && !isUserLoading) {
-      return null;
-    }
+  // Don't show nav if we are sure the user is not logged in
+  if (!user && !isUserLoading) {
+    return null;
+  }
 
-    return (
-        <nav className="fixed bottom-0 left-0 right-0 h-16 bg-card/95 backdrop-blur-sm border-t border-border flex justify-around items-center z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        {navItems.map((item) => {
-            const isActive = item.href === '/' ? pathname === item.href : pathname.startsWith(item.href);
-            
-            const className = "flex flex-col items-center justify-center gap-1 text-muted-foreground h-full rounded-lg px-1 text-center w-1/3";
-            
-            const children = (
-                <>
-                    <item.icon className={cn('h-6 w-6 transition-colors', isActive ? 'text-primary' : 'text-foreground/60')} />
-                    <span className={cn('text-xs font-medium transition-colors leading-tight',  isActive ? 'text-primary' : 'text-foreground/60')}>
-                    {item.label}
-                    </span>
-                </>
-            );
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-card/90 backdrop-blur-xl border-t border-primary/10 flex justify-around items-center z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
+      {navItems.map((item) => {
+        const isActive = item.href === '/' 
+          ? pathname === '/' 
+          : pathname === item.href || pathname.startsWith(item.href + '/');
 
-            return (
-                <Link key={item.href} href={item.href} className={className}>
-                    {children}
-                </Link>
-            );
-        })}
-        </nav>
-    );
+        return (
+          <Link 
+            key={item.href} 
+            href={item.href} 
+            className="flex flex-col items-center justify-center gap-1 w-1/3 h-full transition-all duration-300"
+          >
+            <div className={cn(
+              "p-1.5 rounded-xl transition-all duration-300",
+              isActive ? "bg-primary/20 scale-110" : "bg-transparent"
+            )}>
+              <item.icon className={cn(
+                'h-5 w-5 transition-colors', 
+                isActive ? 'text-primary' : 'text-muted-foreground'
+              )} />
+            </div>
+            <span className={cn(
+              'text-[10px] font-bold uppercase tracking-tighter transition-colors',
+              isActive ? 'text-primary' : 'text-muted-foreground'
+            )}>
+              {item.label}
+            </span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
 }
