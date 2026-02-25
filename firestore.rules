@@ -1,31 +1,6 @@
 /**
  * This ruleset enforces a user-ownership model for a content creation application.
- *
- * Core Philosophy:
- * The security model is centered around the principle that users can only access their own
- * data. This is achieved by including a `userId` field in every document that contains
- * user-specific data.
- *
- * Data Structure:
- * - /users/{userId}: Stores public-facing user profile information.
- * - /history/{historyId}: Stores analysis history for all users, with each document
- *   containing a `userId` field to link it to its owner.
- *
- * Key Security Decisions:
- * - User Enumeration Blocked: Listing documents in the top-level `/users` collection is
- *   explicitly disallowed to protect user privacy.
- * - Strict Ownership on History: Users can only create, read, update, or delete history
- *   documents where the `userId` field matches their own authentication UID. This prevents
- *   any user from accessing another user's history.
- * - Query Security for History: Listing documents from the top-level `/history`
- *   collection is allowed, but it is the client application's responsibility to
- *   implement and enforce queries that filter by the current user's ID to prevent
- *   data leakage.
- *
- * Denormalization for Authorization:
- * This ruleset relies on a denormalized `userId` field within each document in the 
- * `/history` collection. This allows for simple, fast, and secure validation rules
- * without requiring expensive `get()` or `exists()` calls to other documents.
+ * Updated to support Nullpk AI Studio blueprint collections.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -35,17 +10,10 @@ service cloud.firestore {
     // Helper Functions
     // ------------------------------------------------------------------------
 
-    /**
-     * Checks if a user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user is the owner of the resource.
-     * @param userId The UID of the user to check against.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -55,26 +23,25 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
     
     match /users/{userId} {
-      // A user can view their own profile, but not others unless rules are changed.
-      // A user can delete their own account data.
       allow read, delete: if isOwner(userId);
-      // A new user document can only be created by the user themselves, and the ID must match.
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      // A user can only update their own profile, and they cannot change their ID.
-      allow update: if isOwner(userId) && request.resource.data.id == resource.data.id;
-      // Prevent listing all users.
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
       allow list: if false; 
     }
     
-    match /history/{historyId} {
-      // Users can only create history items for themselves.
-      allow create: if isOwner(request.resource.data.userId);
-
-      // Users can only read, update, or delete their own history items.
-      allow read, update, delete: if isOwner(resource.data.userId);
+    match /video_requests/{requestId} {
+      // Users can only create and manage their own video requests
+      allow create: if isOwner(request.resource.data.user_id);
+      allow read, update, delete: if isOwner(resource.data.user_id);
       
-      // Allow a user to query for their own history items.
-      // IMPORTANT: Client queries MUST include `where("userId", "==", auth.uid)`
+      // Allow list queries that filter by current user's ID
+      allow list: if isSignedIn();
+    }
+    
+    match /history/{historyId} {
+      // Legacy support for chat history or other analytics
+      allow create: if isOwner(request.resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
       allow list: if isSignedIn();
     }
   }
