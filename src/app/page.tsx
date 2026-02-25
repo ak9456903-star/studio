@@ -1,88 +1,49 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Loader2, 
   Sparkles, 
-  Video, 
   Zap, 
-  ChevronRight,
-  Instagram,
+  History, 
+  Coins, 
+  PlayCircle,
+  Video,
   Clapperboard,
-  Hash,
-  Quote,
-  Image as ImageIcon,
-  Youtube,
-  Gift,
-  Coins
+  Crown
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 
-const mainActions = [
-  {
-    name: 'Create image',
-    icon: <ImageIcon className="h-5 w-5 text-yellow-500" />,
-    href: '/image-creator',
-  },
-  {
-    name: 'Create video',
-    icon: <Video className="h-5 w-5 text-blue-400" />,
-    href: '/video-creator',
-  },
-  {
-    name: 'Viral analysis',
-    icon: <Sparkles className="h-5 w-5 text-purple-400" />,
-    href: '/chat?mode=analyze',
-  },
-  {
-    name: 'Fast chat',
-    icon: <Zap className="h-5 w-5 text-yellow-400" />,
-    href: '/chat?mode=fast',
-  },
-];
-
-const secondaryTools = [
-  {
-    category: 'Social Media Powerups',
-    icon: <Youtube className="h-5 w-5" />,
-    tasks: [
-      {
-        name: 'Instagram Caption',
-        description: 'Generate viral captions for your posts.',
-        icon: <Instagram className="h-6 w-6 text-pink-500" />,
-        href: '/chat?mode=fast',
-      },
-      {
-        name: 'YouTube Title',
-        description: 'Get click-worthy titles for your videos.',
-        icon: <Clapperboard className="h-6 w-6 text-red-500" />,
-        href: '/chat?mode=fast',
-      },
-      {
-        name: 'Hashtag Generator',
-        description: 'Find the best hashtags to boost reach.',
-        icon: <Hash className="h-6 w-6 text-blue-500" />,
-        href: '/chat?mode=fast',
-      },
-      {
-        name: 'Motivation/Bhakti',
-        description: 'Inspirational quotes in simple Hindi.',
-        icon: <Quote className="h-6 w-6 text-orange-500" />,
-        href: '/chat?mode=fast',
-      },
-    ],
-  },
-];
-
-export default function CreatePage() {
+export default function DashboardPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
-  const { toast } = useToast();
-  const [isAdLoading, setIsAdLoading] = useState(false);
+  const firestore = useFirestore();
+
+  const [topic, setTopic] = useState('');
+  const [style, setStyle] = useState('Shorts');
+  const [tone, setTone] = useState('Energetic');
+  const [duration, setDuration] = useState('60s');
+  const [language, setLanguage] = useState('Hinglish');
+
+  const historyQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'video_requests'),
+      where('user_id', '==', user.uid),
+      orderBy('created_at', 'desc'),
+      limit(3)
+    );
+  }, [firestore, user]);
+
+  const { data: recentVideos, isLoading: isHistoryLoading } = useCollection(historyQuery);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -90,16 +51,12 @@ export default function CreatePage() {
     }
   }, [user, isUserLoading, router]);
 
-  const handleWatchAd = () => {
-    setIsAdLoading(true);
-    // Simulate Ad Loading and Reward
-    setTimeout(() => {
-      setIsAdLoading(false);
-      toast({
-        title: "Reward Claimed! 🎁",
-        description: "You've earned 10 Viral Credits for premium analysis.",
-      });
-    }, 2500);
+  const handleCreateVideo = () => {
+    if (!topic.trim()) return;
+    const params = new URLSearchParams({
+      topic, style, tone, duration, language
+    });
+    router.push(`/create?${params.toString()}`);
   };
 
   if (isUserLoading || !user) {
@@ -110,104 +67,167 @@ export default function CreatePage() {
     );
   }
 
-  const firstName = user.displayName?.split(' ')[0] || 'Creator';
-
   return (
-    <main className="min-h-screen text-white p-6 pb-24 relative z-10">
-      {/* Greeting Section */}
-      <div className="mt-8 mb-8">
-        <h2 className="text-2xl font-medium text-gray-300">Hi {firstName}</h2>
-        <h1 className="text-4xl font-bold mt-2 text-white">Where should we start?</h1>
-      </div>
-
-      {/* Rewarded Ad Section */}
-      <Card className="mb-10 bg-gradient-to-br from-primary/20 via-background to-accent/20 border-primary/30 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-md">
-        <CardContent className="p-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/20 rounded-2xl animate-pulse">
-              <Gift className="h-8 w-8 text-primary" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                Watch & Earn
-                <span className="flex items-center gap-1 text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                  <Coins className="h-3 w-3" />
-                  +10 Credits
-                </span>
-              </h3>
-              <p className="text-xs text-zinc-400 mt-1">
-                Watch a quick ad to unlock Premium Viral Analysis.
-              </p>
-            </div>
+    <main className="min-h-screen p-6 pb-24 max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-10 mt-4">
+        <div>
+          <h1 className="text-3xl font-black tracking-tighter text-white flex items-center gap-2">
+            NULLPK <span className="text-primary">STUDIO</span>
+          </h1>
+          <p className="text-muted-foreground text-sm font-medium">Topic to Video in 60 Seconds</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 border border-primary/20 px-4 py-2 rounded-2xl flex items-center gap-2">
+            <Coins className="h-4 w-4 text-primary" />
+            <span className="font-bold text-sm">250 Credits</span>
           </div>
-          <Button 
-            onClick={handleWatchAd} 
-            disabled={isAdLoading}
-            className="rounded-2xl px-6 font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all"
-          >
-            {isAdLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Watch Now'}
+          <Button variant="ghost" size="icon" className="rounded-full bg-card border" onClick={() => router.push('/profile')}>
+            <Crown className="h-4 w-4 text-yellow-500" />
           </Button>
-        </CardContent>
-      </Card>
-
-      {/* Main Action Chips Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-12">
-        {mainActions.map((action) => (
-          <button
-            key={action.name}
-            onClick={() => action.href && router.push(action.href)}
-            className="flex items-center gap-3 bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800/50 py-4 px-5 rounded-3xl transition-all active:scale-95 text-left group backdrop-blur-sm"
-          >
-            <div className="shrink-0">
-              {action.icon}
-            </div>
-            <span className="font-medium text-gray-100 group-hover:text-white truncate text-sm">
-              {action.name}
-            </span>
-          </button>
-        ))}
+        </div>
       </div>
 
-      {/* Secondary Tools Section */}
-      <div className="space-y-8">
-        {secondaryTools.map((category) => (
-          <div key={category.category}>
-            <div className="flex items-center gap-2 mb-4 px-2">
-               <h3 className="text-lg font-semibold text-zinc-400">{category.category}</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Creation Form */}
+        <Card className="lg:col-span-2 bg-card/40 border-primary/10 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              New Video Project
+            </CardTitle>
+            <CardDescription>Enter a topic and AI will handle the rest.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label>Video Topic</Label>
+              <Input 
+                placeholder="e.g., The Future of AI in India 2025" 
+                className="rounded-xl h-12 bg-background/50 border-primary/5 focus:ring-primary/20"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+              />
             </div>
-            <div className="space-y-3">
-              {category.tasks.map((task) => (
-                <Card
-                  key={task.name}
-                  className="bg-zinc-900/40 border-zinc-800 hover:bg-zinc-900/60 transition-colors cursor-pointer group rounded-2xl overflow-hidden backdrop-blur-sm"
-                  onClick={() => task.href && router.push(task.href)}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-zinc-800/50 rounded-xl group-hover:bg-primary/10 transition-colors">
-                        {task.icon}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-white group-hover:text-primary transition-colors">
-                          {task.name}
-                        </h4>
-                        <p className="text-sm text-zinc-500">
-                          {task.description}
-                        </p>
-                      </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Style</Label>
+                <Select value={style} onValueChange={setStyle}>
+                  <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Shorts">YouTube Shorts</SelectItem>
+                    <SelectItem value="Documentary">Documentary</SelectItem>
+                    <SelectItem value="Educational">Educational</SelectItem>
+                    <SelectItem value="Podcast">AI Podcast</SelectItem>
+                    <SelectItem value="Motivational">Motivational</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Tone</Label>
+                <Select value={tone} onValueChange={setTone}>
+                  <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Energetic">Energetic</SelectItem>
+                    <SelectItem value="Professional">Professional</SelectItem>
+                    <SelectItem value="Casual">Casual</SelectItem>
+                    <SelectItem value="Suspenseful">Suspenseful</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Duration</Label>
+                <Select value={duration} onValueChange={setDuration}>
+                  <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30s">30 Seconds</SelectItem>
+                    <SelectItem value="60s">60 Seconds</SelectItem>
+                    <SelectItem value="3m">3 Minutes</SelectItem>
+                    <SelectItem value="5m">5 Minutes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Language</Label>
+                <Select value={language} onValueChange={setLanguage}>
+                  <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Hinglish">Hinglish</SelectItem>
+                    <SelectItem value="English">English</SelectItem>
+                    <SelectItem value="Hindi">Hindi (Pure)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button 
+              className="w-full h-14 rounded-2xl text-lg font-bold bg-primary text-black hover:bg-primary/90 shadow-lg shadow-primary/20"
+              onClick={handleCreateVideo}
+              disabled={!topic.trim()}
+            >
+              <Zap className="h-5 w-5 mr-2 fill-current" />
+              Launch Pipeline
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Sidebar: Recent & Info */}
+        <div className="space-y-6">
+          <Card className="bg-card/40 border-primary/10 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <History className="h-4 w-4 text-primary" />
+                Recent Projects
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isHistoryLoading ? (
+                <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin" /></div>
+              ) : recentVideos && recentVideos.length > 0 ? (
+                recentVideos.map((video) => (
+                  <div 
+                    key={video.id} 
+                    className="p-3 bg-background/40 border border-primary/5 rounded-2xl hover:bg-primary/5 transition-colors cursor-pointer group"
+                    onClick={() => router.push(`/create?requestId=${video.id}`)}
+                  >
+                    <h4 className="text-xs font-bold truncate">{video.topic}</h4>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[10px] text-muted-foreground">{video.style}</span>
+                      <span className={`text-[10px] font-bold ${video.status === 'completed' ? 'text-green-500' : 'text-primary'}`}>
+                        {video.status}
+                      </span>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-zinc-600 group-hover:text-primary transition-colors" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[10px] text-muted-foreground text-center py-4">No projects yet.</p>
+              )}
+              <Button variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-transparent" onClick={() => router.push('/history')}>
+                View All History
+              </Button>
+            </CardContent>
+          </Card>
 
-      {/* Footer Decoration */}
-      <div className="mt-16 text-center opacity-20 pointer-events-none pb-8">
-        <p className="text-xs uppercase tracking-[0.5em] font-light">Desi Content AI</p>
+          <Card className="bg-gradient-to-br from-primary/20 to-accent/20 border-primary/30 rounded-3xl overflow-hidden">
+            <CardContent className="p-5 text-center">
+              <Crown className="h-8 w-8 text-primary mx-auto mb-3" />
+              <h3 className="font-bold text-white">Go Pro</h3>
+              <p className="text-[10px] text-zinc-300 mt-1">Unlimited 4K Videos, No Watermark, Faster Processing.</p>
+              <Button className="w-full mt-4 rounded-xl bg-white text-black font-bold text-xs">Upgrade Now</Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </main>
   );

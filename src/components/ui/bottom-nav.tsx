@@ -3,15 +3,15 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Home, MessageCircle, User } from 'lucide-react';
+import { Home, History, User, Clapperboard } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
 
 const navItems = [
-  { href: '/', icon: Home, label: 'Home' },
-  { href: '/chat', icon: MessageCircle, label: 'Chat' },
-  { href: '/profile', icon: User, label: 'Profile' },
+  { href: '/', icon: Home, label: 'Dashboard' },
+  { href: '/history', icon: History, label: 'History' },
+  { href: '/profile', icon: User, label: 'Account' },
 ];
 
 export function BottomNav() {
@@ -23,18 +23,12 @@ export function BottomNav() {
     setMounted(true);
   }, []);
 
-  // Avoid hydration mismatch by waiting for mount
-  if (!mounted || isUserLoading) {
-    return null;
-  }
-
-  // Only show nav if user is logged in
-  if (!user) {
+  if (!mounted || isUserLoading || !user) {
     return null;
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-card/90 backdrop-blur-xl border-t border-primary/10 flex justify-around items-center z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
+    <nav className="fixed bottom-0 left-0 right-0 h-20 bg-black/80 backdrop-blur-2xl border-t border-primary/10 flex justify-around items-center z-50 px-4">
       {navItems.map((item) => {
         const isActive = item.href === '/' 
           ? pathname === '/' 
@@ -44,20 +38,17 @@ export function BottomNav() {
           <Link 
             key={item.href} 
             href={item.href} 
-            className="flex flex-col items-center justify-center gap-1 w-1/3 h-full transition-all duration-300"
+            className="flex flex-col items-center justify-center gap-1.5 transition-all duration-300 w-full"
           >
             <div className={cn(
-              "p-1.5 rounded-xl transition-all duration-300",
-              isActive ? "bg-primary/20 scale-110" : "bg-transparent"
+              "p-2 rounded-2xl transition-all duration-300",
+              isActive ? "bg-primary text-black shadow-lg shadow-primary/30 scale-110" : "bg-transparent text-zinc-500 hover:text-white"
             )}>
-              <item.icon className={cn(
-                'h-5 w-5 transition-colors', 
-                isActive ? 'text-primary' : 'text-muted-foreground'
-              )} />
+              <item.icon className="h-6 w-6" />
             </div>
             <span className={cn(
-              'text-[10px] font-bold uppercase tracking-tighter transition-colors',
-              isActive ? 'text-primary' : 'text-muted-foreground'
+              'text-[9px] font-black uppercase tracking-widest transition-colors',
+              isActive ? 'text-primary' : 'text-zinc-500'
             )}>
               {item.label}
             </span>

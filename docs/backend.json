@@ -2,97 +2,61 @@
 {
   "entities": {
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the Desi Content Creator application.",
+      "description": "Represents a user of Nullpk AI Content Studio.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the user (matches auth.uid)."
-        },
-        "name": {
-          "type": "string",
-          "description": "User's display name."
-        },
-        "photo": {
-          "type": "string",
-          "description": "URL of the user's profile photo.",
-          "format": "uri"
-        },
-        "plan": {
-          "type": "string",
-          "description": "The user's subscription plan."
-        }
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "plan": { "type": "string", "enum": ["free", "pro"] },
+        "credits": { "type": "number" },
+        "total_videos_created": { "type": "number" },
+        "created_at": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["userId", "email"]
     },
-    "History": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "History",
+    "VideoRequest": {
+      "title": "VideoRequest",
       "type": "object",
-      "description": "Represents a single analysis history record for a user.",
+      "description": "Represents a complete video creation request.",
       "properties": {
-        "userId": {
-          "type": "string",
-          "description": "The user who initiated the analysis."
-        },
-        "mode": {
-          "type": "string",
-          "description": "The task mode used for the analysis (e.g., 'analyze', 'improve')."
-        },
-        "content": {
-          "type": "string",
-          "description": "The user's original content/prompt for analysis."
-        },
-        "result": {
-          "type": "object",
-          "description": "The structured JSON result from the AI analysis."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the analysis was performed.",
-          "format": "date-time"
-        }
+        "requestId": { "type": "string" },
+        "user_id": { "type": "string" },
+        "topic": { "type": "string" },
+        "style": { "type": "string" },
+        "tone": { "type": "string" },
+        "duration": { "type": "string" },
+        "language": { "type": "string" },
+        "research_summary": { "type": "string" },
+        "script": { "type": "string" },
+        "voice_url": { "type": "string" },
+        "video_url": { "type": "string" },
+        "thumbnail_url": { "type": "string" },
+        "subtitles_url": { "type": "string" },
+        "seo_title": { "type": "string" },
+        "seo_description": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "hashtags": { "type": "array", "items": { "type": "string" } },
+        "youtube_url": { "type": "string" },
+        "viral_score": { "type": "number" },
+        "status": { "type": "string", "enum": ["processing", "completed", "failed"] },
+        "created_at": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "userId",
-        "mode",
-        "content",
-        "result",
-        "createdAt"
-      ]
+      "required": ["user_id", "topic", "status"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous",
-      "google.com"
-    ]
+    "providers": ["password", "google.com"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "schema": {
-            "$ref": "#/entities/User"
-          },
-          "description": "Stores user profile information."
-        }
-      },
-      {
-        "path": "/history/{historyId}",
-        "definition": {
-          "schema": {
-            "$ref": "#/entities/History"
-          },
-          "description": "Stores analysis history for all users."
-        }
-      }
-    ]
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile and credit data."
+    },
+    "/video_requests/{requestId}": {
+      "schema": "VideoRequest",
+      "description": "Complete history of video generation requests."
+    }
   }
 }
