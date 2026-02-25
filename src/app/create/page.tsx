@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -59,7 +58,7 @@ function PipelineContent() {
   useEffect(() => {
     if (!user || !firestore || requestId || requestIdParam) return;
 
-    // Start new pipeline
+    // Start new pipeline if no requestId is provided
     const topic = searchParams.get('topic');
     const style = searchParams.get('style');
     const tone = searchParams.get('tone');
@@ -99,15 +98,15 @@ function PipelineContent() {
             const newProgress = ((nextIndex + 1) / PIPELINE_STEPS.length) * 100;
             setProgress(newProgress);
             
-            // If it's the last step, update the document status to 'completed' in Firestore
+            // On the last step, finalize the document in Firestore
             if (nextIndex === PIPELINE_STEPS.length - 1) {
               updateDocumentNonBlocking(doc(firestore, 'video_requests', requestId), {
                 status: 'completed',
-                seo_title: `10 Secrets about ${videoData.topic} that will blow your mind!`,
-                seo_description: `In this deep dive, we explore the intricate world of ${videoData.topic} and how it impacts your daily life...`,
+                seo_title: `THE TRUTH ABOUT ${videoData.topic.toUpperCase()} (Viral Secrets)`,
+                seo_description: `Discover the untold facts about ${videoData.topic}. We dive deep into the research, analysis, and future implications of this topic in 2025.`,
                 viral_score: Math.floor(Math.random() * 15) + 85,
-                tags: ['ai', videoData.topic, 'viral', '2025'],
-                hashtags: ['#ai', `#${videoData.topic.replace(/\s+/g, '')}`, '#trending'],
+                tags: ['ai', videoData.topic.toLowerCase(), 'viral', '2025', 'educational'],
+                hashtags: ['#ai', `#${videoData.topic.replace(/\s+/g, '')}`, '#trending', '#educational'],
                 youtube_url: 'https://youtube.com/watch?v=placeholder'
               });
               clearInterval(interval);
@@ -117,7 +116,7 @@ function PipelineContent() {
           clearInterval(interval);
           return prev;
         });
-      }, 3000); 
+      }, 3500); // 3.5s per step for a realistic feel
       return () => clearInterval(interval);
     } else if (videoData?.status === 'completed') {
         setActiveStepIndex(PIPELINE_STEPS.length - 1);
@@ -134,106 +133,140 @@ function PipelineContent() {
 
   return (
     <main className="min-h-screen p-6 pb-24 max-w-4xl mx-auto">
-      <Button variant="ghost" className="mb-6 rounded-full" onClick={() => router.push('/')}>
-        <ChevronLeft className="h-4 w-4 mr-1" /> Back
+      <Button variant="ghost" className="mb-6 rounded-full hover:bg-primary/5 text-muted-foreground" onClick={() => router.push('/')}>
+        <ChevronLeft className="h-4 w-4 mr-1" /> Dashboard
       </Button>
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-black tracking-tighter text-white">
-          {isCompleted ? 'VIDEO COMPLETED' : 'PROCESSING PIPELINE'}
+        <h1 className="text-4xl font-black tracking-tighter text-white uppercase">
+          {isCompleted ? 'MASTERPIECE READY' : 'NULLPK PIPELINE ACTIVE'}
         </h1>
-        <p className="text-muted-foreground mt-2 font-medium">Topic: {videoData?.topic || searchParams.get('topic')}</p>
+        <p className="text-muted-foreground mt-2 font-bold uppercase tracking-widest text-xs">
+            {videoData?.topic || searchParams.get('topic')}
+        </p>
       </div>
 
       {!isCompleted ? (
-        <Card className="bg-card/40 border-primary/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl">
+        <Card className="bg-card/40 border-primary/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50 animate-pulse" />
+          
           <div className="mb-8">
-            <div className="flex justify-between text-sm font-bold mb-2">
-              <span className="text-primary uppercase tracking-widest">{PIPELINE_STEPS[activeStepIndex].label}</span>
-              <span>{Math.round(progress)}%</span>
+            <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.3em] mb-3">
+              <span className="text-primary">{PIPELINE_STEPS[activeStepIndex].label}</span>
+              <span>{Math.round(progress)}% Complete</span>
             </div>
-            <Progress value={progress} className="h-2 bg-primary/10" />
+            <Progress value={progress} className="h-3 bg-primary/5" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {PIPELINE_STEPS.map((step, index) => (
               <div 
                 key={step.id} 
-                className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
+                className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 ${
                   index < activeStepIndex 
                     ? 'bg-green-500/10 border-green-500/20 text-green-500' 
                     : index === activeStepIndex 
-                      ? 'bg-primary/10 border-primary/30 text-primary animate-pulse' 
+                      ? 'bg-primary/10 border-primary/30 text-primary shadow-[0_0_20px_rgba(0,212,255,0.1)]' 
                       : 'bg-zinc-900/40 border-zinc-800 text-zinc-600'
                 }`}
               >
-                {index < activeStepIndex ? <CheckCircle2 className="h-5 w-5" /> : <step.icon className="h-5 w-5" />}
-                <span className="text-sm font-bold">{step.label}</span>
+                <div className="p-2 rounded-xl bg-background/50 border border-current/10">
+                  {index < activeStepIndex ? <CheckCircle2 className="h-5 w-5" /> : <step.icon className="h-5 w-5" />}
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest">{step.label}</span>
               </div>
             ))}
           </div>
         </Card>
       ) : (
-        <div className="space-y-8 animate-in fade-in zoom-in duration-500">
-          <Card className="bg-card/40 border-primary/10 rounded-3xl overflow-hidden shadow-2xl">
-            <div className="aspect-video bg-zinc-950 flex items-center justify-center relative group">
-               <Video className="h-16 w-16 text-primary/20 group-hover:scale-110 transition-transform" />
-               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                 <Button className="rounded-full h-16 w-16"><Youtube className="h-8 w-8" /></Button>
+        <div className="space-y-8 animate-in fade-in zoom-in duration-700">
+          <Card className="bg-card/40 border-primary/10 rounded-3xl overflow-hidden shadow-2xl border">
+            <div className="aspect-video bg-zinc-950 flex items-center justify-center relative group cursor-pointer">
+               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
+               <Video className="h-16 w-16 text-primary/20 group-hover:scale-110 transition-transform relative z-20" />
+               <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+               <div className="absolute bottom-6 left-6 z-20">
+                 <h2 className="text-xl font-black text-white uppercase tracking-tighter line-clamp-1">{videoData?.seo_title}</h2>
                </div>
             </div>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                 <div>
-                   <h2 className="text-xl font-bold">{videoData?.seo_title || 'The Viral Masterpiece'}</h2>
-                   <p className="text-xs text-muted-foreground">Generated at {videoData?.created_at ? new Date(videoData.created_at.toDate()).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+              <div className="flex items-center justify-between mb-8">
+                 <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <PlayCircle className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Viral Score</p>
+                        <p className="text-sm font-black text-primary uppercase">{videoData?.viral_score}/100 Potential</p>
+                    </div>
                  </div>
-                 <div className="bg-primary/20 text-primary px-4 py-2 rounded-full font-black text-sm">
-                   SCORE: {videoData?.viral_score || 92}
+                 <div className="flex gap-2">
+                    <Button variant="secondary" className="rounded-xl h-10 px-4 text-[10px] font-black uppercase tracking-widest gap-2" onClick={() => copyToClipboard(videoData?.seo_description || '', 'SEO Data')}>
+                        <Copy className="h-4 w-4" /> Copy SEO
+                    </Button>
+                    <Button className="rounded-xl h-10 px-6 text-[10px] font-black uppercase tracking-widest gap-2 shadow-lg shadow-primary/20" onClick={() => window.open(videoData?.youtube_url, '_blank')}>
+                        <Youtube className="h-4 w-4" /> YouTube
+                    </Button>
                  </div>
               </div>
               
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                 <Button variant="secondary" className="rounded-xl gap-2 text-xs" onClick={() => copyToClipboard(videoData?.seo_description || '', 'SEO Data')}>
-                   <Copy className="h-3.5 w-3.5" /> Copy SEO
-                 </Button>
-                 <Button variant="secondary" className="rounded-xl gap-2 text-xs">
-                   <Download className="h-3.5 w-3.5" /> Download
-                 </Button>
-                 <Button variant="secondary" className="rounded-xl gap-2 text-xs" onClick={() => window.open(videoData?.youtube_url, '_blank')}>
-                   <ExternalLink className="h-3.5 w-3.5" /> Open YT
-                 </Button>
-                 <Button className="rounded-xl gap-2 text-xs" onClick={() => router.push('/')}>
-                   <Loader2 className="h-3.5 w-3.5" /> Regenerate
-                 </Button>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                 <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
+                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Style</p>
+                    <p className="text-xs font-bold text-white uppercase">{videoData?.style}</p>
+                 </div>
+                 <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
+                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Tone</p>
+                    <p className="text-xs font-bold text-white uppercase">{videoData?.tone}</p>
+                 </div>
+                 <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
+                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Duration</p>
+                    <p className="text-xs font-bold text-white uppercase">{videoData?.duration}</p>
+                 </div>
+                 <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
+                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Language</p>
+                    <p className="text-xs font-bold text-white uppercase">{videoData?.language}</p>
+                 </div>
               </div>
             </CardContent>
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <Card className="bg-card/40 border-primary/10 rounded-3xl p-6">
-                <h3 className="font-bold mb-4 flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-primary" /> SEO Metadata
+             <Card className="bg-card/40 border-primary/10 rounded-3xl p-6 shadow-xl border">
+                <h3 className="text-xs font-black uppercase tracking-[0.3em] mb-6 flex items-center gap-2 text-primary">
+                  <Globe className="h-4 w-4" /> SEO Optimization
                 </h3>
-                <div className="space-y-4 text-sm">
-                   <div>
-                     <Label className="text-[10px] text-muted-foreground uppercase">Title</Label>
-                     <p className="font-medium mt-1">{videoData?.seo_title || `10 Secrets about ${videoData?.topic}!`}</p>
+                <div className="space-y-6">
+                   <div className="space-y-2">
+                     <Label className="text-[9px] font-black text-muted-foreground uppercase">Viral Title</Label>
+                     <p className="text-sm font-bold text-white leading-tight">{videoData?.seo_title}</p>
                    </div>
-                   <div>
-                     <Label className="text-[10px] text-muted-foreground uppercase">Description</Label>
-                     <p className="text-zinc-400 mt-1 line-clamp-3">{videoData?.seo_description || 'Loading AI description...'}</p>
+                   <div className="space-y-2">
+                     <Label className="text-[9px] font-black text-muted-foreground uppercase">Smart Tags</Label>
+                     <div className="flex flex-wrap gap-1.5">
+                        {videoData?.tags?.map((tag: string) => (
+                            <span key={tag} className="text-[9px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase border border-primary/20">#{tag}</span>
+                        ))}
+                     </div>
                    </div>
                 </div>
              </Card>
 
-             <Card className="bg-card/40 border-primary/10 rounded-3xl p-6">
-                <h3 className="font-bold mb-4 flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-primary" /> Thumbnail Preview
+             <Card className="bg-card/40 border-primary/10 rounded-3xl p-6 shadow-xl border">
+                <h3 className="text-xs font-black uppercase tracking-[0.3em] mb-6 flex items-center gap-2 text-primary">
+                  <ImageIcon className="h-4 w-4" /> Thumbnail Review
                 </h3>
-                <div className="aspect-video bg-zinc-900 rounded-xl border border-primary/5 flex items-center justify-center relative overflow-hidden">
-                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
-                   <span className="relative z-10 text-[10px] font-bold uppercase tracking-widest text-primary/40">High CTR Image Preview</span>
+                <div className="aspect-video bg-zinc-900 rounded-2xl border border-primary/5 flex items-center justify-center relative overflow-hidden group">
+                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50" />
+                   <ImageIcon className="h-10 w-10 text-primary/10 group-hover:scale-110 transition-transform" />
+                   <div className="absolute top-3 right-3">
+                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-black/40 backdrop-blur-md border border-white/10" onClick={() => copyToClipboard(videoData?.topic || '', 'Thumbnail Prompt')}>
+                           <Download className="h-4 w-4 text-white" />
+                       </Button>
+                   </div>
+                   <div className="absolute bottom-3 left-3">
+                       <span className="text-[8px] font-black uppercase tracking-widest text-primary/40 px-3 py-1 bg-primary/5 rounded-full border border-primary/10">High CTR 4K Preview</span>
+                   </div>
                 </div>
              </Card>
           </div>
@@ -245,7 +278,7 @@ function PipelineContent() {
 
 export default function CreatePipelinePage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-black"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>}>
       <PipelineContent />
     </Suspense>
   );

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -33,6 +32,7 @@ export default function DashboardPage() {
   const [duration, setDuration] = useState('60s');
   const [language, setLanguage] = useState('Hinglish');
 
+  // Fetch only 3 most recent projects for the sidebar
   const historyQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -72,10 +72,10 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-10 mt-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tighter text-white flex items-center gap-2">
+          <h1 className="text-3xl font-black tracking-tighter text-white flex items-center gap-2 uppercase">
             NULLPK <span className="text-primary">STUDIO</span>
           </h1>
-          <p className="text-muted-foreground text-sm font-medium">Topic to Video in 60 Seconds</p>
+          <p className="text-muted-foreground text-sm font-medium">Automatic Video Factory • AI Powered</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 border border-primary/20 px-4 py-2 rounded-2xl flex items-center gap-2">
@@ -83,7 +83,7 @@ export default function DashboardPage() {
             <span className="font-bold text-sm">250 Credits</span>
           </div>
           <Button variant="ghost" size="icon" className="rounded-full bg-card border" onClick={() => router.push('/profile')}>
-            <Crown className="h-4 w-4 text-yellow-500" />
+            <UserIcon className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -94,15 +94,15 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              New Video Project
+              New Video Pipeline
             </CardTitle>
-            <CardDescription>Enter a topic and AI will handle the rest.</CardDescription>
+            <CardDescription>Enter a topic and watch AI create a masterpiece from scratch.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label>Video Topic</Label>
+              <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Video Topic</Label>
               <Input 
-                placeholder="e.g., The Future of AI in India 2025" 
+                placeholder="e.g., Hidden secrets of the Taj Mahal" 
                 className="rounded-xl h-12 bg-background/50 border-primary/5 focus:ring-primary/20"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
@@ -111,7 +111,7 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Style</Label>
+                <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Style</Label>
                 <Select value={style} onValueChange={setStyle}>
                   <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
                     <SelectValue />
@@ -126,7 +126,7 @@ export default function DashboardPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Tone</Label>
+                <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Tone</Label>
                 <Select value={tone} onValueChange={setTone}>
                   <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
                     <SelectValue />
@@ -143,7 +143,7 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Duration</Label>
+                <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Duration</Label>
                 <Select value={duration} onValueChange={setDuration}>
                   <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
                     <SelectValue />
@@ -157,7 +157,7 @@ export default function DashboardPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Language</Label>
+                <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Language</Label>
                 <Select value={language} onValueChange={setLanguage}>
                   <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
                     <SelectValue />
@@ -172,7 +172,7 @@ export default function DashboardPage() {
             </div>
 
             <Button 
-              className="w-full h-14 rounded-2xl text-lg font-bold bg-primary text-black hover:bg-primary/90 shadow-lg shadow-primary/20"
+              className="w-full h-14 rounded-2xl text-lg font-black uppercase tracking-widest bg-primary text-black hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-95"
               onClick={handleCreateVideo}
               disabled={!topic.trim()}
             >
@@ -182,13 +182,13 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Sidebar: Recent & Info */}
+        {/* Sidebar */}
         <div className="space-y-6">
           <Card className="bg-card/40 border-primary/10 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="text-xs font-bold flex items-center gap-2 uppercase tracking-widest">
                 <History className="h-4 w-4 text-primary" />
-                Recent Projects
+                Recent History
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -201,10 +201,10 @@ export default function DashboardPage() {
                     className="p-3 bg-background/40 border border-primary/5 rounded-2xl hover:bg-primary/5 transition-colors cursor-pointer group"
                     onClick={() => router.push(`/create?requestId=${video.id}`)}
                   >
-                    <h4 className="text-xs font-bold truncate">{video.topic}</h4>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-[10px] text-muted-foreground">{video.style}</span>
-                      <span className={`text-[10px] font-bold ${video.status === 'completed' ? 'text-green-500' : 'text-primary'}`}>
+                    <h4 className="text-[11px] font-bold truncate text-white">{video.topic}</h4>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="text-[9px] font-bold uppercase text-muted-foreground">{video.style}</span>
+                      <span className={`text-[9px] font-black uppercase ${video.status === 'completed' ? 'text-green-500' : 'text-primary'}`}>
                         {video.status}
                       </span>
                     </div>
@@ -213,22 +213,26 @@ export default function DashboardPage() {
               ) : (
                 <p className="text-[10px] text-muted-foreground text-center py-4">No projects yet.</p>
               )}
-              <Button variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-transparent" onClick={() => router.push('/history')}>
-                View All History
+              <Button variant="ghost" className="w-full text-[10px] font-black uppercase tracking-widest text-primary hover:bg-transparent" onClick={() => router.push('/history')}>
+                Library View
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-primary/20 to-accent/20 border-primary/30 rounded-3xl overflow-hidden">
+          <Card className="bg-gradient-to-br from-primary/20 to-accent/20 border-primary/30 rounded-3xl overflow-hidden shadow-lg">
             <CardContent className="p-5 text-center">
               <Crown className="h-8 w-8 text-primary mx-auto mb-3" />
-              <h3 className="font-bold text-white">Go Pro</h3>
-              <p className="text-[10px] text-zinc-300 mt-1">Unlimited 4K Videos, No Watermark, Faster Processing.</p>
-              <Button className="w-full mt-4 rounded-xl bg-white text-black font-bold text-xs">Upgrade Now</Button>
+              <h3 className="font-black text-white uppercase text-sm tracking-tighter">Upgrade to Pro</h3>
+              <p className="text-[10px] text-zinc-300 mt-1 leading-relaxed">Unlimited 4K Videos, No Watermark, Faster Server Processing.</p>
+              <Button className="w-full mt-4 rounded-xl bg-white text-black font-black uppercase tracking-widest text-[10px]">Go Pro</Button>
             </CardContent>
           </Card>
         </div>
       </div>
     </main>
   );
+}
+
+function UserIcon({ className }: { className?: string }) {
+    return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 }
