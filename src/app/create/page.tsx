@@ -3,10 +3,11 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Label } from '@/components/ui/label';
 import { 
   Loader2, 
   CheckCircle2, 
@@ -79,7 +80,7 @@ function PipelineContent() {
       language,
       status: 'processing',
       created_at: serverTimestamp(),
-      viral_score: Math.floor(Math.random() * 20) + 75, // Simulated
+      viral_score: 0,
     };
 
     addDocumentNonBlocking(collection(firestore, 'video_requests'), newDoc)
@@ -88,22 +89,41 @@ function PipelineContent() {
       });
   }, [user, firestore, requestId, searchParams, router, requestIdParam]);
 
-  // Simulate progress steps
+  // Simulate progress steps and persist 'completed' status
   useEffect(() => {
-    if (requestId && (!videoData || videoData.status === 'processing')) {
+    if (requestId && firestore && videoData && videoData.status === 'processing') {
       const interval = setInterval(() => {
         setActiveStepIndex((prev) => {
           if (prev < PIPELINE_STEPS.length - 1) {
-            setProgress(((prev + 1) / PIPELINE_STEPS.length) * 100);
-            return prev + 1;
+            const nextIndex = prev + 1;
+            const newProgress = ((nextIndex + 1) / PIPELINE_STEPS.length) * 100;
+            setProgress(newProgress);
+            
+            // If it's the last step, update the document status to 'completed' in Firestore
+            if (nextIndex === PIPELINE_STEPS.length - 1) {
+              updateDocumentNonBlocking(doc(firestore, 'video_requests', requestId), {
+                status: 'completed',
+                seo_title: `10 Secrets about ${videoData.topic} that will blow your mind!`,
+                seo_description: `In this deep dive, we explore the intricate world of ${videoData.topic} and how it impacts your daily life...`,
+                viral_score: Math.floor(Math.random() * 15) + 85,
+                tags: ['ai', videoData.topic, 'viral', '2025'],
+                hashtags: ['#ai', `#${videoData.topic.replace(/\s+/g, '')}`, '#trending'],
+                youtube_url: 'https://youtube.com/watch?v=placeholder'
+              });
+              clearInterval(interval);
+            }
+            return nextIndex;
           }
           clearInterval(interval);
           return prev;
         });
-      }, 3000); // 3 seconds per step simulated
+      }, 3000); 
       return () => clearInterval(interval);
+    } else if (videoData?.status === 'completed') {
+        setActiveStepIndex(PIPELINE_STEPS.length - 1);
+        setProgress(100);
     }
-  }, [requestId, videoData]);
+  }, [requestId, videoData, firestore]);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -166,7 +186,7 @@ function PipelineContent() {
               <div className="flex items-center justify-between mb-6">
                  <div>
                    <h2 className="text-xl font-bold">{videoData?.seo_title || 'The Viral Masterpiece'}</h2>
-                   <p className="text-xs text-muted-foreground">Generated at {new Date().toLocaleDateString()}</p>
+                   <p className="text-xs text-muted-foreground">Generated at {videoData?.created_at ? new Date(videoData.created_at.toDate()).toLocaleDateString() : new Date().toLocaleDateString()}</p>
                  </div>
                  <div className="bg-primary/20 text-primary px-4 py-2 rounded-full font-black text-sm">
                    SCORE: {videoData?.viral_score || 92}
@@ -174,13 +194,13 @@ function PipelineContent() {
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                 <Button variant="secondary" className="rounded-xl gap-2 text-xs" onClick={() => copyToClipboard('Simulated SEO Description', 'SEO Data')}>
+                 <Button variant="secondary" className="rounded-xl gap-2 text-xs" onClick={() => copyToClipboard(videoData?.seo_description || '', 'SEO Data')}>
                    <Copy className="h-3.5 w-3.5" /> Copy SEO
                  </Button>
                  <Button variant="secondary" className="rounded-xl gap-2 text-xs">
                    <Download className="h-3.5 w-3.5" /> Download
                  </Button>
-                 <Button variant="secondary" className="rounded-xl gap-2 text-xs">
+                 <Button variant="secondary" className="rounded-xl gap-2 text-xs" onClick={() => window.open(videoData?.youtube_url, '_blank')}>
                    <ExternalLink className="h-3.5 w-3.5" /> Open YT
                  </Button>
                  <Button className="rounded-xl gap-2 text-xs" onClick={() => router.push('/')}>
@@ -198,11 +218,11 @@ function PipelineContent() {
                 <div className="space-y-4 text-sm">
                    <div>
                      <Label className="text-[10px] text-muted-foreground uppercase">Title</Label>
-                     <p className="font-medium mt-1">10 Secrets about {videoData?.topic} that will blow your mind!</p>
+                     <p className="font-medium mt-1">{videoData?.seo_title || `10 Secrets about ${videoData?.topic}!`}</p>
                    </div>
                    <div>
                      <Label className="text-[10px] text-muted-foreground uppercase">Description</Label>
-                     <p className="text-zinc-400 mt-1 line-clamp-3">In this deep dive, we explore the intricate world of {videoData?.topic} and how it impacts your daily life...</p>
+                     <p className="text-zinc-400 mt-1 line-clamp-3">{videoData?.seo_description || 'Loading AI description...'}</p>
                    </div>
                 </div>
              </Card>

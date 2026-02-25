@@ -10,8 +10,8 @@ import NextImage from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export const metadata: Metadata = {
-  title: 'Desi Content Creator',
-  description: 'An all-in-one AI content generator for Indian users.',
+  title: 'Nullpk AI Content Studio',
+  description: 'An all-in-one automated AI video creation system for creators.',
 };
 
 export default function RootLayout({
