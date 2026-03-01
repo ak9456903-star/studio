@@ -11,7 +11,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper: Check if the authenticated user owns the document (by ID or data field)
+    // Helper: Check if the authenticated user owns the document (by UID)
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -21,13 +21,14 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
-    // Video requests: Owners can create and list their own projects
+    // Video requests: Owners can create and read their own projects
     match /video_requests/{requestId} {
+      // Allow creation if the user is signed in and provides their own UID
       allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
       
-      // Allow read/update/delete/list if the document belongs to the user
-      // For list queries, this requires the query to filter by user_id
-      allow read, update, delete, list: if isSignedIn() && (
+      // Allow read (get/list), update, and delete if the document belongs to the user
+      // For list queries, the rule is enforced by checking if the query filters by user_id
+      allow read, update, delete: if isSignedIn() && (
         resource == null || resource.data.user_id == request.auth.uid
       );
     }
@@ -35,7 +36,7 @@ service cloud.firestore {
     // History/Activity logs: Private to the user
     match /history/{id} {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read, list: if isSignedIn() && (
+      allow read: if isSignedIn() && (
         resource == null || resource.data.userId == request.auth.uid
       );
     }

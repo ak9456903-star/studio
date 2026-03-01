@@ -19,8 +19,8 @@ import {
   Youtube,
   Copy,
   Download,
-  ExternalLink,
-  ChevronLeft
+  ChevronLeft,
+  PlayCircle
 } from 'lucide-react';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -213,19 +213,19 @@ function PipelineContent() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                  <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Style</p>
-                    <p className="text-xs font-bold text-white uppercase">{videoData?.style}</p>
+                    <p className="text-sm font-bold text-white uppercase">{videoData?.style}</p>
                  </div>
                  <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Tone</p>
-                    <p className="text-xs font-bold text-white uppercase">{videoData?.tone}</p>
+                    <p className="text-sm font-bold text-white uppercase">{videoData?.tone}</p>
                  </div>
                  <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Duration</p>
-                    <p className="text-xs font-bold text-white uppercase">{videoData?.duration}</p>
+                    <p className="text-sm font-bold text-white uppercase">{videoData?.duration}</p>
                  </div>
                  <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Language</p>
-                    <p className="text-xs font-bold text-white uppercase">{videoData?.language}</p>
+                    <p className="text-sm font-bold text-white uppercase">{videoData?.language}</p>
                  </div>
               </div>
             </CardContent>
