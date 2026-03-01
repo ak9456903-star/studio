@@ -18,7 +18,7 @@ const GenerateThumbnailOutputSchema = z.object({
 });
 export type GenerateThumbnailOutput = z.infer<typeof GenerateThumbnailOutputSchema>;
 
-// A high-impact cinematic placeholder image for thumbnails
+// A high-impact cinematic placeholder image for thumbnails (User Provided Fallback)
 const FALLBACK_THUMBNAIL_URL = "https://picsum.photos/seed/youtube-viral/1280/720";
 
 export async function generateThumbnail(input: GenerateThumbnailInput): Promise<GenerateThumbnailOutput> {
@@ -33,10 +33,10 @@ const thumbnailGeneratorFlow = ai.defineFlow(
   },
   async ({ title }) => {
     try {
-      // Using Gemini 2.5 Flash Image (Nano-Banana) for generation/editing
-      const prompt = `Create a high-impact, viral YouTube thumbnail for: "${title}". 
-      Visual style: High contrast, cinematic lighting, 16:9 aspect ratio, 4K resolution.
-      The image should be visually striking and grab attention instantly.
+      // Using Gemini 2.5 Flash Image (Nano-Banana) for generation
+      const prompt = `Create a high-impact, viral YouTube thumbnail for a video titled: "${title}". 
+      Visual style: High contrast, cinematic lighting, vibrant colors, 16:9 aspect ratio.
+      The image should look professionally designed and attention-grabbing.
       IMPORTANT: Do not include any text in the image.`;
       
       const { media } = await ai.generate({
@@ -48,7 +48,7 @@ const thumbnailGeneratorFlow = ai.defineFlow(
       });
       
       if (!media?.url) {
-          throw new Error('Nano-Banana image generation failed.');
+          throw new Error('Nano-Banana image generation failed to return a media URL.');
       }
 
       return { imageUrl: media.url };
@@ -60,7 +60,8 @@ const thumbnailGeneratorFlow = ai.defineFlow(
         error.message.includes('quota') || 
         error.message.includes('billing') || 
         error.message.includes('429') || 
-        error.message.includes('not available')
+        error.message.includes('not available') ||
+        error.message.includes('limit')
       ) {
         return { 
           imageUrl: FALLBACK_THUMBNAIL_URL,

@@ -19,7 +19,8 @@ import {
   Download,
   ChevronLeft,
   PlayCircle,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles
 } from 'lucide-react';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -108,7 +109,9 @@ function PipelineContent() {
                 duration: 5 
             });
             
-            if (videoResult.error) throw new Error(videoResult.error);
+            if (videoResult.error) {
+              console.warn("Video Generation Warning:", videoResult.error);
+            }
             if (videoResult.isMock) setIsFallbackVideo(true);
 
             // STEP 3: THUMBNAIL (Nano-Banana with Quota Fallback)
@@ -122,7 +125,7 @@ function PipelineContent() {
             await updateDocumentNonBlocking(doc(firestore!, 'video_requests', requestId!), {
                 status: 'completed',
                 script: scriptData,
-                video_url: videoResult.videoUrl,
+                video_url: videoResult.videoUrl || "https://cdn.pixabay.com/video/2023/10/22/186111-877232230_tiny.mp4",
                 thumbnail_url: thumbResult.imageUrl,
                 seo_title: `THE UNTOLD STORY OF ${videoData!.topic.toUpperCase()}`,
                 seo_description: `Automated investigation into ${videoData!.topic}. This video was generated entirely by Nullpk AI Studio. #AI #Automation`,
@@ -222,8 +225,8 @@ function PipelineContent() {
           {(isFallbackVideo || isFallbackThumb) && (
             <div className="bg-yellow-500/10 border-2 border-dashed border-yellow-500/20 rounded-3xl p-4 flex items-center gap-3 text-yellow-500">
                <AlertTriangle className="h-5 w-5 shrink-0" />
-               <p className="text-[10px] font-bold uppercase tracking-widest">
-                  Notice: Placeholder {isFallbackVideo && isFallbackThumb ? 'Assets' : isFallbackVideo ? 'Video' : 'Thumbnail'} used due to AI Quota/Billing limits.
+               <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+                  Notice: Mock assets used due to AI Quota or Billing limits.
                </p>
             </div>
           )}

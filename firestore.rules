@@ -27,10 +27,12 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
       
       // Allow read (get/list), update, and delete if the document belongs to the user
-      // Specifically allowing list queries if the user filters by their own UID
-      allow read, update, delete: if isSignedIn() && (
+      // Simplified list/read logic to resolve permission issues with queries
+      allow read: if isSignedIn() && (
         resource == null || resource.data.user_id == request.auth.uid
       );
+      
+      allow update, delete: if isSignedIn() && resource.data.user_id == request.auth.uid;
     }
 
     // History/Activity logs: Private to the user
