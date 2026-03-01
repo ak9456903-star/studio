@@ -17,7 +17,8 @@ import {
   PlayCircle,
   Video,
   Clapperboard,
-  Crown
+  Crown,
+  User as UserIcon
 } from 'lucide-react';
 import { collection, query, where, limit } from 'firebase/firestore';
 
@@ -33,7 +34,6 @@ export default function DashboardPage() {
   const [language, setLanguage] = useState('Hinglish');
 
   // Fetch only 3 most recent projects for the sidebar
-  // Removed orderBy temporarily to fix permission/index errors
   const historyQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -89,8 +89,8 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Creation Form */}
-        <Card className="lg:col-span-2 bg-card/40 border-primary/10 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl">
+        {/* Creation Form - Using Dashed Borders */}
+        <Card className="lg:col-span-2 bg-card/40 border-2 border-dashed border-primary/20 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:border-primary/40">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -103,7 +103,7 @@ export default function DashboardPage() {
               <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Video Topic</Label>
               <Input 
                 placeholder="e.g., Hidden secrets of the Taj Mahal" 
-                className="rounded-xl h-12 bg-background/50 border-primary/5 focus:ring-primary/20"
+                className="rounded-2xl h-12 bg-background/50 border-primary/5 focus:ring-primary/20"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
               />
@@ -113,7 +113,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Style</Label>
                 <Select value={style} onValueChange={setStyle}>
-                  <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
+                  <SelectTrigger className="rounded-2xl bg-background/50 border-primary/5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -128,7 +128,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Tone</Label>
                 <Select value={tone} onValueChange={setTone}>
-                  <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
+                  <SelectTrigger className="rounded-2xl bg-background/50 border-primary/5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -145,7 +145,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Duration</Label>
                 <Select value={duration} onValueChange={setDuration}>
-                  <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
+                  <SelectTrigger className="rounded-2xl bg-background/50 border-primary/5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Language</Label>
                 <Select value={language} onValueChange={setLanguage}>
-                  <SelectTrigger className="rounded-xl bg-background/50 border-primary/5">
+                  <SelectTrigger className="rounded-2xl bg-background/50 border-primary/5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -184,7 +184,7 @@ export default function DashboardPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card className="bg-card/40 border-primary/10 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl">
+          <Card className="bg-card/40 border-2 border-dashed border-primary/10 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-2xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-bold flex items-center gap-2 uppercase tracking-widest">
                 <HistoryIcon className="h-4 w-4 text-primary" />
@@ -198,10 +198,10 @@ export default function DashboardPage() {
                 recentVideos.map((video) => (
                   <div 
                     key={video.id} 
-                    className="p-3 bg-background/40 border border-primary/5 rounded-2xl hover:bg-primary/5 transition-colors cursor-pointer group"
+                    className="p-3 bg-background/40 border-2 border-dashed border-primary/5 rounded-2xl hover:bg-primary/5 transition-colors cursor-pointer group"
                     onClick={() => router.push(`/create?requestId=${video.id}`)}
                   >
-                    <h4 className="text-[11px] font-bold truncate text-white">{video.topic}</h4>
+                    <h4 className="text-[11px] font-bold truncate text-white uppercase tracking-tight">{video.topic}</h4>
                     <div className="flex items-center justify-between mt-1.5">
                       <span className="text-[9px] font-bold uppercase text-muted-foreground">{video.style}</span>
                       <span className={`text-[9px] font-black uppercase ${video.status === 'completed' ? 'text-green-500' : 'text-primary'}`}>
@@ -219,7 +219,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-primary/20 to-accent/20 border-primary/30 rounded-3xl overflow-hidden shadow-lg">
+          <Card className="bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-dashed border-primary/30 rounded-[2rem] overflow-hidden shadow-lg">
             <CardContent className="p-5 text-center">
               <Crown className="h-8 w-8 text-primary mx-auto mb-3" />
               <h3 className="font-black text-white uppercase text-sm tracking-tighter">Upgrade to Pro</h3>
@@ -231,8 +231,4 @@ export default function DashboardPage() {
       </div>
     </main>
   );
-}
-
-function UserIcon({ className }: { className?: string }) {
-    return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 }

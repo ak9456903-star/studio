@@ -147,7 +147,7 @@ function PipelineContent() {
       </div>
 
       {!isCompleted ? (
-        <Card className="bg-card/40 border-primary/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+        <Card className="bg-card/40 border-2 border-dashed border-primary/20 backdrop-blur-xl rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50 animate-pulse" />
           
           <div className="mb-8">
@@ -162,11 +162,11 @@ function PipelineContent() {
             {PIPELINE_STEPS.map((step, index) => (
               <div 
                 key={step.id} 
-                className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 ${
+                className={`flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed transition-all duration-500 ${
                   index < activeStepIndex 
                     ? 'bg-green-500/10 border-green-500/20 text-green-500' 
                     : index === activeStepIndex 
-                      ? 'bg-primary/10 border-primary/30 text-primary shadow-[0_0_20px_rgba(0,212,255,0.1)]' 
+                      ? 'bg-primary/10 border-primary/40 text-primary shadow-[0_0_20px_rgba(0,212,255,0.1)]' 
                       : 'bg-zinc-900/40 border-zinc-800 text-zinc-600'
                 }`}
               >
@@ -180,7 +180,7 @@ function PipelineContent() {
         </Card>
       ) : (
         <div className="space-y-8 animate-in fade-in zoom-in duration-700">
-          <Card className="bg-card/40 border-primary/10 rounded-3xl overflow-hidden shadow-2xl border">
+          <Card className="bg-card/40 border-2 border-dashed border-primary/20 rounded-[2.5rem] overflow-hidden shadow-2xl">
             <div className="aspect-video bg-zinc-950 flex items-center justify-center relative group cursor-pointer">
                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
                <Video className="h-16 w-16 text-primary/20 group-hover:scale-110 transition-transform relative z-20" />
@@ -211,19 +211,19 @@ function PipelineContent() {
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                 <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
+                 <div className="p-4 bg-background/40 border-2 border-dashed border-primary/5 rounded-2xl">
                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Style</p>
                     <p className="text-sm font-bold text-white uppercase">{videoData?.style}</p>
                  </div>
-                 <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
+                 <div className="p-4 bg-background/40 border-2 border-dashed border-primary/5 rounded-2xl">
                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Tone</p>
                     <p className="text-sm font-bold text-white uppercase">{videoData?.tone}</p>
                  </div>
-                 <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
+                 <div className="p-4 bg-background/40 border-2 border-dashed border-primary/5 rounded-2xl">
                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Duration</p>
                     <p className="text-sm font-bold text-white uppercase">{videoData?.duration}</p>
                  </div>
-                 <div className="p-4 bg-background/40 border border-primary/5 rounded-2xl">
+                 <div className="p-4 bg-background/40 border-2 border-dashed border-primary/5 rounded-2xl">
                     <p className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Language</p>
                     <p className="text-sm font-bold text-white uppercase">{videoData?.language}</p>
                  </div>
@@ -232,7 +232,7 @@ function PipelineContent() {
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <Card className="bg-card/40 border-primary/10 rounded-3xl p-6 shadow-xl border">
+             <Card className="bg-card/40 border-2 border-dashed border-primary/20 rounded-[2.5rem] p-6 shadow-xl">
                 <h3 className="text-xs font-black uppercase tracking-[0.3em] mb-6 flex items-center gap-2 text-primary">
                   <Globe className="h-4 w-4" /> SEO Optimization
                 </h3>
@@ -252,11 +252,11 @@ function PipelineContent() {
                 </div>
              </Card>
 
-             <Card className="bg-card/40 border-primary/10 rounded-3xl p-6 shadow-xl border">
+             <Card className="bg-card/40 border-2 border-dashed border-primary/20 rounded-[2.5rem] p-6 shadow-xl">
                 <h3 className="text-xs font-black uppercase tracking-[0.3em] mb-6 flex items-center gap-2 text-primary">
                   <ImageIcon className="h-4 w-4" /> Thumbnail Review
                 </h3>
-                <div className="aspect-video bg-zinc-900 rounded-2xl border border-primary/5 flex items-center justify-center relative overflow-hidden group">
+                <div className="aspect-video bg-zinc-900 rounded-2xl border-2 border-dashed border-primary/5 flex items-center justify-center relative overflow-hidden group">
                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50" />
                    <ImageIcon className="h-10 w-10 text-primary/10 group-hover:scale-110 transition-transform" />
                    <div className="absolute top-3 right-3">
