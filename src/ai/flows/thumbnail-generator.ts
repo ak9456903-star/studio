@@ -1,10 +1,6 @@
 'use server';
 /**
- * @fileOverview An AI flow for generating YouTube thumbnails from a video title.
- *
- * - generateThumbnail - A function that handles thumbnail generation.
- * - GenerateThumbnailInput - The input type for the generateThumbnail function.
- * - GenerateThumbnailOutput - The return type for the generateThumbnail function.
+ * @fileOverview An AI flow for generating YouTube thumbnails using Gemini 2.5 Flash Image (Nano-Banana).
  */
 
 import { ai } from '@/ai/genkit';
@@ -31,24 +27,22 @@ const thumbnailGeneratorFlow = ai.defineFlow(
     outputSchema: GenerateThumbnailOutputSchema,
   },
   async ({ title }) => {
-    // A more detailed prompt to guide the AI in creating a good thumbnail.
-    const prompt = `Create a vibrant, high-contrast, and click-worthy YouTube thumbnail with a 16:9 aspect ratio for a video titled: "${title}". 
-    The image should be visually striking, emotionally engaging, and relevant to the video title.
-    Focus on a central, clear subject. Use bold colors.
-    IMPORTANT: Do NOT include any text in the image itself. The title will be overlayed later.`;
+    // Using Gemini 2.5 Flash Image (Nano-Banana) for generation/editing
+    const prompt = `Create a high-impact, viral YouTube thumbnail for: "${title}". 
+    Visual style: High contrast, cinematic lighting, 16:9 aspect ratio, 4K resolution.
+    The image should be visually striking and grab attention instantly.
+    IMPORTANT: Do not include any text in the image.`;
     
     const { media } = await ai.generate({
-        model: 'googleai/gemini-2.5-flash-image-preview',
-        prompt: [
-          { text: prompt }
-        ],
+        model: 'googleai/gemini-2.5-flash-image',
+        prompt: prompt,
         config: {
             responseModalities: ['IMAGE', 'TEXT'],
         }
     });
     
     if (!media?.url) {
-        throw new Error('Image generation failed to return a URL for the thumbnail.');
+        throw new Error('Nano-Banana image generation failed.');
     }
 
     return { imageUrl: media.url };
