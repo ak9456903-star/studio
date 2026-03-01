@@ -89,21 +89,21 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Creation Form - Using Dashed Borders */}
+        {/* Creation Form - Using Dashed Borders and Dash Radius */}
         <Card className="lg:col-span-2 bg-card/40 border-2 border-dashed border-primary/20 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:border-primary/40">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 uppercase tracking-tight">
               <Sparkles className="h-5 w-5 text-primary" />
               New Video Pipeline
             </CardTitle>
-            <CardDescription>Enter a topic and watch AI create a masterpiece from scratch.</CardDescription>
+            <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Automated blueprint creation system</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Video Topic</Label>
+              <Label className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground font-black">Video Topic</Label>
               <Input 
                 placeholder="e.g., Hidden secrets of the Taj Mahal" 
-                className="rounded-2xl h-12 bg-background/50 border-primary/5 focus:ring-primary/20"
+                className="rounded-2xl h-14 bg-background/50 border-primary/5 focus:ring-primary/20"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
               />
@@ -111,9 +111,9 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Style</Label>
+                <Label className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground font-black">Style</Label>
                 <Select value={style} onValueChange={setStyle}>
-                  <SelectTrigger className="rounded-2xl bg-background/50 border-primary/5">
+                  <SelectTrigger className="rounded-2xl h-12 bg-background/50 border-primary/5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -126,9 +126,9 @@ export default function DashboardPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Tone</Label>
+                <Label className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground font-black">Tone</Label>
                 <Select value={tone} onValueChange={setTone}>
-                  <SelectTrigger className="rounded-2xl bg-background/50 border-primary/5">
+                  <SelectTrigger className="rounded-2xl h-12 bg-background/50 border-primary/5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -143,9 +143,9 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Duration</Label>
+                <Label className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground font-black">Duration</Label>
                 <Select value={duration} onValueChange={setDuration}>
-                  <SelectTrigger className="rounded-2xl bg-background/50 border-primary/5">
+                  <SelectTrigger className="rounded-2xl h-12 bg-background/50 border-primary/5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -157,9 +157,9 @@ export default function DashboardPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">Language</Label>
+                <Label className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground font-black">Language</Label>
                 <Select value={language} onValueChange={setLanguage}>
-                  <SelectTrigger className="rounded-2xl bg-background/50 border-primary/5">
+                  <SelectTrigger className="rounded-2xl h-12 bg-background/50 border-primary/5">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -172,7 +172,7 @@ export default function DashboardPage() {
             </div>
 
             <Button 
-              className="w-full h-14 rounded-2xl text-lg font-black uppercase tracking-widest bg-primary text-black hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-95"
+              className="w-full h-16 rounded-[1.5rem] text-lg font-black uppercase tracking-widest bg-primary text-black hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-95"
               onClick={handleCreateVideo}
               disabled={!topic.trim()}
             >
@@ -182,49 +182,52 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Sidebar */}
+        {/* Sidebar - Dashed Style */}
         <div className="space-y-6">
-          <Card className="bg-card/40 border-2 border-dashed border-primary/10 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-2xl">
+          <Card className="bg-card/40 border-2 border-dashed border-primary/10 backdrop-blur-xl rounded-[2rem] overflow-hidden shadow-2xl">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-bold flex items-center gap-2 uppercase tracking-widest">
-                <HistoryIcon className="h-4 w-4 text-primary" />
-                Recent History
+              <CardTitle className="text-[10px] font-black flex items-center gap-2 uppercase tracking-[0.3em] text-primary">
+                <HistoryIcon className="h-4 w-4" />
+                Vault Access
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {isHistoryLoading ? (
-                <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>
               ) : recentVideos && recentVideos.length > 0 ? (
                 recentVideos.map((video) => (
                   <div 
                     key={video.id} 
-                    className="p-3 bg-background/40 border-2 border-dashed border-primary/5 rounded-2xl hover:bg-primary/5 transition-colors cursor-pointer group"
+                    className="p-4 bg-background/40 border-2 border-dashed border-primary/5 rounded-2xl hover:bg-primary/5 transition-all cursor-pointer group"
                     onClick={() => router.push(`/create?requestId=${video.id}`)}
                   >
-                    <h4 className="text-[11px] font-bold truncate text-white uppercase tracking-tight">{video.topic}</h4>
-                    <div className="flex items-center justify-between mt-1.5">
-                      <span className="text-[9px] font-bold uppercase text-muted-foreground">{video.style}</span>
-                      <span className={`text-[9px] font-black uppercase ${video.status === 'completed' ? 'text-green-500' : 'text-primary'}`}>
+                    <h4 className="text-[11px] font-black truncate text-white uppercase tracking-tight group-hover:text-primary transition-colors">{video.topic}</h4>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">{video.style}</span>
+                      <span className={`text-[8px] font-black uppercase tracking-widest ${video.status === 'completed' ? 'text-green-500' : 'text-primary'}`}>
                         {video.status}
                       </span>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-[10px] text-muted-foreground text-center py-4">No projects yet.</p>
+                <p className="text-[9px] text-muted-foreground text-center py-4 uppercase font-black tracking-widest opacity-50">Empty Archive</p>
               )}
-              <Button variant="ghost" className="w-full text-[10px] font-black uppercase tracking-widest text-primary hover:bg-transparent" onClick={() => router.push('/history')}>
-                Library View
+              <Button variant="ghost" className="w-full text-[9px] font-black uppercase tracking-[0.4em] text-primary hover:bg-primary/5 h-10" onClick={() => router.push('/history')}>
+                Full Library View
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-dashed border-primary/30 rounded-[2rem] overflow-hidden shadow-lg">
-            <CardContent className="p-5 text-center">
-              <Crown className="h-8 w-8 text-primary mx-auto mb-3" />
-              <h3 className="font-black text-white uppercase text-sm tracking-tighter">Upgrade to Pro</h3>
-              <p className="text-[10px] text-zinc-300 mt-1 leading-relaxed">Unlimited 4K Videos, No Watermark, Faster Server Processing.</p>
-              <Button className="w-full mt-4 rounded-xl bg-white text-black font-black uppercase tracking-widest text-[10px]">Go Pro</Button>
+          <Card className="bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-dashed border-primary/30 rounded-[2rem] overflow-hidden shadow-lg group hover:scale-[1.02] transition-transform">
+            <CardContent className="p-6 text-center">
+              <div className="relative mb-4">
+                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+                <Crown className="h-10 w-10 text-primary mx-auto relative z-10" />
+              </div>
+              <h3 className="font-black text-white uppercase text-sm tracking-tighter">Nullpk Elite</h3>
+              <p className="text-[9px] text-zinc-300 mt-2 leading-relaxed uppercase tracking-widest font-bold">Unlimited 4K Rendering • No Watermark</p>
+              <Button className="w-full mt-5 rounded-xl bg-white text-black font-black uppercase tracking-widest text-[9px] h-11 hover:bg-primary transition-colors">Upgrade Project</Button>
             </CardContent>
           </Card>
         </div>

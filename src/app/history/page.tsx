@@ -17,7 +17,6 @@ export default function HistoryPage() {
   const firestore = useFirestore();
 
   // Query for user's video projects
-  // Removed orderBy temporarily to fix permission/index errors
   const historyQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -69,11 +68,11 @@ export default function HistoryPage() {
           {videos.map((video) => (
             <Card 
               key={video.id} 
-              className="bg-card/40 border-primary/10 backdrop-blur-xl rounded-2xl overflow-hidden hover:bg-primary/5 transition-all group cursor-pointer border shadow-xl"
+              className="bg-card/40 border-2 border-dashed border-primary/10 backdrop-blur-xl rounded-[2rem] overflow-hidden hover:bg-primary/5 transition-all group cursor-pointer shadow-xl"
               onClick={() => router.push(`/create?requestId=${video.id}`)}
             >
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-16 w-16 rounded-xl bg-zinc-950 flex items-center justify-center shrink-0 border border-primary/5 relative overflow-hidden group-hover:border-primary/20 transition-all">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="h-16 w-16 rounded-xl bg-zinc-950 flex items-center justify-center shrink-0 border-2 border-dashed border-primary/5 relative overflow-hidden group-hover:border-primary/20 transition-all">
                    <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
                    {video.status === 'completed' ? (
                      <Video className="h-6 w-6 text-primary relative z-10" />
@@ -113,7 +112,7 @@ export default function HistoryPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-card/40 border-dashed border-primary/20 border-2 rounded-3xl p-16 text-center shadow-2xl backdrop-blur-md">
+        <div className="bg-card/40 border-dashed border-primary/20 border-2 rounded-[2.5rem] p-16 text-center shadow-2xl backdrop-blur-md">
           <Video className="h-16 w-16 text-primary/10 mx-auto mb-6" />
           <h3 className="text-xl font-black text-white uppercase tracking-tighter">Empty Library</h3>
           <p className="text-[10px] text-muted-foreground mt-2 mb-8 font-bold uppercase tracking-widest">You haven&apos;t launched any pipelines yet.</p>

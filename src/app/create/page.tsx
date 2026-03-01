@@ -133,7 +133,7 @@ function PipelineContent() {
 
   return (
     <main className="min-h-screen p-6 pb-24 max-w-4xl mx-auto">
-      <Button variant="ghost" className="mb-6 rounded-full hover:bg-primary/5 text-muted-foreground" onClick={() => router.push('/')}>
+      <Button variant="ghost" className="mb-6 rounded-full hover:bg-primary/5 text-muted-foreground uppercase text-[10px] font-black tracking-widest" onClick={() => router.push('/')}>
         <ChevronLeft className="h-4 w-4 mr-1" /> Dashboard
       </Button>
 
