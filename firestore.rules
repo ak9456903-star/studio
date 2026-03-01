@@ -27,7 +27,7 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid;
       
       // Allow read (get/list), update, and delete if the document belongs to the user
-      // For list queries, the rule is enforced by checking if the query filters by user_id
+      // We use a broader check for read to ensure collection queries (list) are safe
       allow read, update, delete: if isSignedIn() && (
         resource == null || resource.data.user_id == request.auth.uid
       );

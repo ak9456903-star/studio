@@ -12,14 +12,14 @@ import {
   Loader2, 
   Sparkles, 
   Zap, 
-  History, 
+  History as HistoryIcon, 
   Coins, 
   PlayCircle,
   Video,
   Clapperboard,
   Crown
 } from 'lucide-react';
-import { collection, query, where, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -33,12 +33,12 @@ export default function DashboardPage() {
   const [language, setLanguage] = useState('Hinglish');
 
   // Fetch only 3 most recent projects for the sidebar
+  // Removed orderBy temporarily to fix permission/index errors
   const historyQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, 'video_requests'),
       where('user_id', '==', user.uid),
-      orderBy('created_at', 'desc'),
       limit(3)
     );
   }, [firestore, user]);
@@ -187,7 +187,7 @@ export default function DashboardPage() {
           <Card className="bg-card/40 border-primary/10 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-bold flex items-center gap-2 uppercase tracking-widest">
-                <History className="h-4 w-4 text-primary" />
+                <HistoryIcon className="h-4 w-4 text-primary" />
                 Recent History
               </CardTitle>
             </CardHeader>

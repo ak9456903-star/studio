@@ -6,24 +6,23 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Clapperboard, Calendar, ChevronRight, Video, Trash2 } from 'lucide-react';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { deleteDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
 
 export default function HistoryPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  // Query for user's video projects, ordered by creation date
+  // Query for user's video projects
+  // Removed orderBy temporarily to fix permission/index errors
   const historyQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, 'video_requests'),
-      where('user_id', '==', user.uid),
-      orderBy('created_at', 'desc')
+      where('user_id', '==', user.uid)
     );
   }, [firestore, user]);
 
@@ -100,7 +99,7 @@ export default function HistoryPage() {
 
                 <div className="flex flex-col items-end gap-2">
                   <Badge className={video.status === 'completed' ? 'bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/10 rounded-full text-[8px] font-black tracking-widest' : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/10 rounded-full text-[8px] font-black tracking-widest'}>
-                    {video.status.toUpperCase()}
+                    {video.status?.toUpperCase() || 'UNKNOWN'}
                   </Badge>
                   <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-zinc-600 hover:text-red-500 hover:bg-red-500/10" onClick={(e) => handleDelete(e, video.id)}>
