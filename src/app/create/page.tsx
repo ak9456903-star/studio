@@ -45,7 +45,8 @@ function PipelineContent() {
   const [requestId, setRequestId] = useState<string | null>(requestIdParam);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [isFallback, setIsFallback] = useState(false);
+  const [isFallbackVideo, setIsFallbackVideo] = useState(false);
+  const [isFallbackThumb, setIsFallbackThumb] = useState(false);
   const pipelineStartedRef = useRef(false);
 
   const docRef = useMemoFirebase(() => {
@@ -108,11 +109,12 @@ function PipelineContent() {
             });
             
             if (videoResult.error) throw new Error(videoResult.error);
-            if (videoResult.isMock) setIsFallback(true);
+            if (videoResult.isMock) setIsFallbackVideo(true);
 
-            // STEP 3: THUMBNAIL (Nano-Banana)
+            // STEP 3: THUMBNAIL (Nano-Banana with Quota Fallback)
             setActiveStepIndex(2); setProgress(75);
             const thumbResult = await generateThumbnail({ title: videoData!.topic });
+            if (thumbResult.isMock) setIsFallbackThumb(true);
 
             // STEP 4: SEO & FINALIZE
             setActiveStepIndex(3); setProgress(95);
@@ -132,7 +134,7 @@ function PipelineContent() {
             setProgress(100);
             toast({ 
               title: "Pipeline Complete", 
-              description: videoResult.isMock ? "Video generated using placeholder due to API billing." : "Your AI video is ready!" 
+              description: "Your AI video and assets are ready!" 
             });
 
         } catch (e: any) {
@@ -217,10 +219,12 @@ function PipelineContent() {
         </Card>
       ) : (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-          {isFallback && (
+          {(isFallbackVideo || isFallbackThumb) && (
             <div className="bg-yellow-500/10 border-2 border-dashed border-yellow-500/20 rounded-3xl p-4 flex items-center gap-3 text-yellow-500">
                <AlertTriangle className="h-5 w-5 shrink-0" />
-               <p className="text-[10px] font-bold uppercase tracking-widest">Notice: Placeholder video used (Google Billing Required for Veo AI).</p>
+               <p className="text-[10px] font-bold uppercase tracking-widest">
+                  Notice: Placeholder {isFallbackVideo && isFallbackThumb ? 'Assets' : isFallbackVideo ? 'Video' : 'Thumbnail'} used due to AI Quota/Billing limits.
+               </p>
             </div>
           )}
 
